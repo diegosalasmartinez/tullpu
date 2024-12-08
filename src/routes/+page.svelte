@@ -1,16 +1,10 @@
 <script lang="ts">
-	import { type ToolBarOptions } from '$lib/types';
-	import Canvas from '$lib/classes/canvas';
 	import { onMount, onDestroy } from 'svelte';
+	import Canvas from '$lib/classes/Canvas';
 	import ToolBar from '$lib/components/ToolBar.svelte';
 
 	let canvasElement: HTMLCanvasElement | null = null;
 	let canvas: Canvas | null = null;
-
-	const setTool = (tool: ToolBarOptions) => {
-		if (!canvas) return;
-		canvas.setTool(tool);
-	};
 
 	onMount(() => {
 		if (!canvasElement) return;
@@ -24,5 +18,5 @@
 	});
 </script>
 
-<ToolBar {setTool} />
+<ToolBar />
 <canvas bind:this={canvasElement} class="absolute active:cursor-grabbing"></canvas>

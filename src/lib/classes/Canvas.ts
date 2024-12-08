@@ -1,5 +1,7 @@
 import { type Shape, type ToolBarOptions, ShapeType } from '../types';
-import Store from './store';
+import Store from './Store';
+import { tool as toolStore } from '$lib/stores/ToolStore';
+//import { createTool } from '$lib/runes/Tool.svelte';
 
 export default class Canvas {
 	private canvas: HTMLCanvasElement;
@@ -26,6 +28,11 @@ export default class Canvas {
 		this.ctx = canvas.getContext('2d');
 		this.store = new Store();
 
+		// Subscribe to stores
+		toolStore.subscribe((value) => {
+			this.currentTool = value;
+		});
+
 		// Save listener references
 		this.resizeListener = this.resizeCanvas.bind(this);
 		this.wheelListener = this.handleWheel.bind(this);
@@ -50,10 +57,6 @@ export default class Canvas {
 		this.canvas.removeEventListener('mousedown', this.mouseDownListener);
 		this.canvas.removeEventListener('mousemove', this.mouseMoveListener);
 		this.canvas.removeEventListener('mouseup', this.mouseUpListener);
-	}
-
-	setTool(tool: ToolBarOptions) {
-		this.currentTool = tool;
 	}
 
 	handleMouseDown(event: MouseEvent) {
