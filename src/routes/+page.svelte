@@ -3,12 +3,13 @@
 	import Canvas from '$lib/classes/Canvas';
 	import ToolBar from '$lib/components/ToolBar.svelte';
 
-	let canvasElement: HTMLCanvasElement | null = null;
+	let canvasStatic: HTMLCanvasElement | null = null;
+	let canvasInteractive: HTMLCanvasElement | null = null;
 	let canvas: Canvas | null = null;
 
 	onMount(() => {
-		if (!canvasElement) return;
-		canvas = new Canvas(canvasElement);
+		if (!canvasStatic || !canvasInteractive) return;
+		canvas = new Canvas(canvasStatic, canvasInteractive);
 		canvas.resizeCanvas();
 	});
 
@@ -19,4 +20,9 @@
 </script>
 
 <ToolBar />
-<canvas bind:this={canvasElement} class="absolute active:cursor-grabbing"></canvas>
+
+<canvas bind:this={canvasStatic} class="canvas-static absolute active:cursor-grabbing"></canvas>
+<div>
+	<canvas bind:this={canvasInteractive} class="canvas-interactive absolute active:cursor-grabbing">
+	</canvas>
+</div>

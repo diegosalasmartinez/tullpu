@@ -4,7 +4,7 @@
 	import ArrowIcon from '$lib/icons/Arrow.svelte';
 	import RectangleIcon from '$lib/icons/Rectangle.svelte';
 	import LineIcon from '$lib/icons/Line.svelte';
-	import { tool } from '$lib/stores/ToolStore';
+	import { currentTool } from '$lib/stores/ToolStore';
 
 	const options: { name: string; value: ToolBarOptions; icon: Component }[] = [
 		{ name: 'Selection', value: 'selection', icon: ArrowIcon },
@@ -19,9 +19,9 @@
 	{#each options as option}
 		<button
 			class={`rounded-lg px-2.5 py-2 transition-colors ${
-				$tool === option.value ? 'bg-sky-300' : 'hover:bg-sky-100'
+				$currentTool === option.value ? 'bg-sky-300' : 'hover:bg-sky-100'
 			}`}
-			on:click={() => tool.set(option.value)}
+			on:click={() => currentTool.set(option.value)}
 		>
 			<svelte:component this={option.icon} className="size-5" />
 		</button>
