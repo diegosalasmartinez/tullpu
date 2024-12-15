@@ -1,6 +1,8 @@
-import type { Shape } from '$lib/types';
+import { get } from 'svelte/store';
+import { type Shape, ToolType } from '$lib/types';
+import { currentTool } from '$lib/stores/ToolStore';
 import ShapeEntity from './ShapeEntity';
-import Store from './Store';
+import CanvasStore from './CanvasStore';
 
 export default class Canvas {
 	private canvasStatic: HTMLCanvasElement;
@@ -16,7 +18,7 @@ export default class Canvas {
 	private startX = 0;
 	private startY = 0;
 
-	private store: Store;
+	private store: CanvasStore;
 	private shapeEntity: ShapeEntity;
 
 	// Listener references
@@ -34,7 +36,7 @@ export default class Canvas {
 		this.canvasInteractive = canvasInteractive;
 		this.ctxInteractive = canvasInteractive.getContext('2d');
 
-		this.store = new Store();
+		this.store = new CanvasStore();
 		this.shapeEntity = new ShapeEntity(this.ctxStatic, this.ctxInteractive);
 
 		// Save listener references
@@ -127,17 +129,21 @@ export default class Canvas {
 		this.ctxStatic.restore();
 	}
 
-	// TODO: Implement method with interactive canvas
 	handleClick(event: MouseEvent) {
+		if (get(currentTool) !== ToolType.Selection) return;
+
+		this.clearInteractiveCanvas();
+
 		const { x, y } = this.getMousePosition(event);
 
 		for (const shape of this.store.getShapes()) {
 			const isSelected = this.shapeEntity.isShapeSelected(shape, x, y);
 			if (isSelected) {
-				this.shapeEntity.selectShape(shape);
-				break;
+				return this.shapeEntity.selectShape(shape);
 			}
 		}
+
+		this.shapeEntity.clearSelection();
 	}
 
 	handleWheel(event: WheelEvent) {

@@ -1,4 +1,4 @@
-import { ShapeType, type Rectangle } from '$lib/types';
+import { type Rectangle, ToolType } from '$lib/types';
 
 export default class RectangleEntity {
 	private ctxStatic: CanvasRenderingContext2D | null;
@@ -29,14 +29,14 @@ export default class RectangleEntity {
 	) {
 		if (!ctx) return;
 
-		ctx.strokeStyle = 'green';
+		ctx.strokeStyle = 'black';
 		ctx.strokeRect(x, y, width, height);
 	}
 
 	createShape(x1: number, y1: number, x2: number, y2: number) {
 		const line: Rectangle = {
 			id: crypto.randomUUID(),
-			type: ShapeType.Rectangle,
+			type: ToolType.Rectangle,
 			x: x1,
 			y: y1,
 			width: x2 - x1,
@@ -45,4 +45,6 @@ export default class RectangleEntity {
 
 		return line;
 	}
+
+	isClicked(shape: Rectangle, x: number, y: number) {}
 }

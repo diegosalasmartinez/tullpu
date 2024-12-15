@@ -1,6 +1,6 @@
-import type { Shape } from '../types';
+import type { Shape } from '$lib/types';
 
-export default class Store {
+export default class CanvasStore {
 	private shapes: Shape[] = [];
 
 	constructor() {

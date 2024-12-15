@@ -1,9 +1,9 @@
-import { type Shape, ShapeType } from '../types';
+import { get } from 'svelte/store';
+import { type Shape, ToolType } from '$lib/types';
 import { currentTool } from '$lib/stores/ToolStore';
 import { currentShape } from '$lib/stores/ShapeStore';
 import LineEntity from '$lib/classes/shapes/LineEntity';
 import RectangleEntity from '$lib/classes/shapes/RectangleEntity';
-import { get } from 'svelte/store';
 
 export default class ShapeEntity {
 	private lineEntity: LineEntity;
@@ -19,9 +19,9 @@ export default class ShapeEntity {
 
 	drawCoords(x1: number, y1: number, x2: number, y2: number) {
 		switch (get(currentTool)) {
-			case ShapeType.Line:
+			case ToolType.Line:
 				return this.lineEntity.drawCoords(x1, y1, x2, y2);
-			case ShapeType.Rectangle:
+			case ToolType.Rectangle:
 				return this.rectangleEntity.drawCoords(x1, y1, x2, y2);
 			default:
 				return;
@@ -30,9 +30,9 @@ export default class ShapeEntity {
 
 	drawShape(shape: Shape) {
 		switch (shape.type) {
-			case ShapeType.Line:
+			case ToolType.Line:
 				return this.lineEntity.drawShape(shape);
-			case ShapeType.Rectangle:
+			case ToolType.Rectangle:
 				return this.rectangleEntity.drawShape(shape);
 			default:
 				return;
@@ -41,9 +41,9 @@ export default class ShapeEntity {
 
 	createShape(x1: number, y1: number, x2: number, y2: number): Shape | null {
 		switch (get(currentTool)) {
-			case ShapeType.Line:
+			case ToolType.Line:
 				return this.lineEntity.createShape(x1, y1, x2, y2);
-			case ShapeType.Rectangle:
+			case ToolType.Rectangle:
 				return this.rectangleEntity.createShape(x1, y1, x2, y2);
 			default:
 				break;
@@ -54,9 +54,9 @@ export default class ShapeEntity {
 
 	isShapeSelected(shape: Shape, x: number, y: number) {
 		switch (shape.type) {
-			case ShapeType.Line:
+			case ToolType.Line:
 				return this.lineEntity.isClicked(shape, x, y);
-			//case ShapeType.Rectangle:
+			//case ToolType.Rectangle:
 			//    return this.rectangleEntity.isClicked(shape, x, y);
 			default:
 				return false;
@@ -67,12 +67,16 @@ export default class ShapeEntity {
 		currentShape.set(shape);
 
 		switch (shape.type) {
-			case ShapeType.Line:
+			case ToolType.Line:
 				return this.lineEntity.select(shape);
-			//case ShapeType.Rectangle:
+			//case ToolType.Rectangle:
 			//    return this.rectangleEntity.select(shape);
 			default:
 				return;
 		}
+	}
+
+	clearSelection() {
+		currentShape.set(null);
 	}
 }

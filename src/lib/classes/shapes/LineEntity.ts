@@ -1,4 +1,4 @@
-import { ShapeType, type Line } from '$lib/types';
+import { type Line, ToolType } from '$lib/types';
 
 export default class LineEntity {
 	private ctxStatic: CanvasRenderingContext2D | null;
@@ -30,7 +30,7 @@ export default class LineEntity {
 		if (!ctx) return;
 
 		ctx.strokeStyle = 'black';
-		ctx.lineWidth = 2;
+		ctx.lineWidth = 1;
 		ctx.beginPath();
 		ctx.moveTo(x1, y1);
 		ctx.lineTo(x2, y2);
@@ -40,7 +40,7 @@ export default class LineEntity {
 	createShape(x1: number, y1: number, x2: number, y2: number) {
 		const line: Line = {
 			id: crypto.randomUUID(),
-			type: ShapeType.Line,
+			type: ToolType.Line,
 			x1,
 			y1,
 			x2,
@@ -90,18 +90,20 @@ export default class LineEntity {
 	}
 
 	select(shape: Line) {
-		if (!this.ctxStatic) return;
+		if (!this.ctxInteractive) return;
 
-		// TODO: Draw little white circle at the start and end of the line (interactive canvas)
-		this.ctxStatic.fillStyle = 'white';
-		this.ctxStatic.beginPath();
-		this.ctxStatic.arc(shape.x1, shape.y1, 5, 0, Math.PI * 2);
-		this.ctxStatic.fill();
-		this.ctxStatic.closePath();
+		this.ctxInteractive.fillStyle = 'purple';
 
-		this.ctxStatic.beginPath();
-		this.ctxStatic.arc(shape.x2, shape.y2, 5, 0, Math.PI * 2);
-		this.ctxStatic.fill();
-		this.ctxStatic.closePath();
+		// Draw circle at the start of the line
+		this.ctxInteractive.beginPath();
+		this.ctxInteractive.arc(shape.x1, shape.y1, 5, 0, Math.PI * 2);
+		this.ctxInteractive.fill();
+		this.ctxInteractive.closePath();
+
+		// Draw circle at the end of the line
+		this.ctxInteractive.beginPath();
+		this.ctxInteractive.arc(shape.x2, shape.y2, 5, 0, Math.PI * 2);
+		this.ctxInteractive.fill();
+		this.ctxInteractive.closePath();
 	}
 }

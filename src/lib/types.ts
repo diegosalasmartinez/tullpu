@@ -1,13 +1,12 @@
-export type ToolBarOptions = 'selection' | 'line' | 'rectangle';
-
-export enum ShapeType {
+export enum ToolType {
+	Selection = 'selection',
 	Line = 'line',
 	Rectangle = 'rectangle'
 }
 
 export type Line = {
 	id: string;
-	type: ShapeType.Line;
+	type: ToolType.Line;
 	x1: number;
 	y1: number;
 	x2: number;
@@ -16,7 +15,7 @@ export type Line = {
 
 export type Rectangle = {
 	id: string;
-	type: ShapeType.Rectangle;
+	type: ToolType.Rectangle;
 	x: number;
 	y: number;
 	width: number;

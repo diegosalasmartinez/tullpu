@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { type ToolBarOptions } from '$lib/types';
+	import { ToolType } from '$lib/types';
 	import type { Component } from 'svelte';
 	import ArrowIcon from '$lib/icons/Arrow.svelte';
 	import RectangleIcon from '$lib/icons/Rectangle.svelte';
 	import LineIcon from '$lib/icons/Line.svelte';
 	import { currentTool } from '$lib/stores/ToolStore';
 
-	const options: { name: string; value: ToolBarOptions; icon: Component }[] = [
-		{ name: 'Selection', value: 'selection', icon: ArrowIcon },
-		{ name: 'Rectangle', value: 'rectangle', icon: RectangleIcon },
-		{ name: 'Line', value: 'line', icon: LineIcon }
+	const options: { name: string; value: ToolType; icon: Component }[] = [
+		{ name: 'Selection', value: ToolType.Selection, icon: ArrowIcon },
+		{ name: 'Rectangle', value: ToolType.Rectangle, icon: RectangleIcon },
+		{ name: 'Line', value: ToolType.Line, icon: LineIcon }
 	];
 </script>
 
