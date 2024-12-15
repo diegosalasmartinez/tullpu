@@ -64,8 +64,6 @@ export default class ShapeEntity {
 	}
 
 	selectShape(shape: Shape) {
-		currentShape.set(shape);
-
 		switch (shape.type) {
 			case ToolType.Line:
 				return this.lineEntity.select(shape);

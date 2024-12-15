@@ -1,6 +1,4 @@
-import { get } from 'svelte/store';
 import { type Shape, ToolType } from '$lib/types';
-import { currentTool } from '$lib/stores/ToolStore';
 import ShapeEntity from './ShapeEntity';
 import CanvasStore from './CanvasStore';
 
@@ -18,7 +16,7 @@ export default class Canvas {
 	private startX = 0;
 	private startY = 0;
 
-	private store: CanvasStore;
+	private canvasStore: CanvasStore;
 	private shapeEntity: ShapeEntity;
 
 	// Listener references
@@ -36,7 +34,7 @@ export default class Canvas {
 		this.canvasInteractive = canvasInteractive;
 		this.ctxInteractive = canvasInteractive.getContext('2d');
 
-		this.store = new CanvasStore();
+		this.canvasStore = new CanvasStore();
 		this.shapeEntity = new ShapeEntity(this.ctxStatic, this.ctxInteractive);
 
 		// Save listener references
@@ -68,16 +66,22 @@ export default class Canvas {
 		this.canvasInteractive.removeEventListener('click', this.clickListener);
 	}
 
-	handleMouseDown(event: MouseEvent) {
-		this.drawing = true;
-
+	private handleMouseDown(event: MouseEvent) {
 		const { x, y } = this.getMousePosition(event);
 		this.startX = x;
 		this.startY = y;
+
+		this.drawing = true;
 	}
 
-	handleMouseMove(event: MouseEvent) {
-		if (!this.drawing || !this.ctxInteractive) return;
+	private handleMouseMove(event: MouseEvent) {
+		if (this.drawing) {
+			this.handleDrawing(event);
+		}
+	}
+
+	private handleDrawing(event: MouseEvent) {
+		if (!this.ctxInteractive) return;
 
 		const { x, y } = this.getMousePosition(event);
 
@@ -94,9 +98,13 @@ export default class Canvas {
 		this.ctxInteractive.restore();
 	}
 
-	handleMouseUp(event: MouseEvent) {
-		if (!this.drawing) return;
+	private handleMouseUp(event: MouseEvent) {
+		if (this.drawing) {
+			this.handleStopDrawing(event);
+		}
+	}
 
+	private handleStopDrawing(event: MouseEvent) {
 		const { x, y } = this.getMousePosition(event);
 
 		// Validate it's not the same point
@@ -112,7 +120,7 @@ export default class Canvas {
 	}
 
 	private addShapeToCanvas(shape: Shape) {
-		this.store.addShape(shape);
+		this.canvasStore.addShape(shape);
 
 		this.clearInteractiveCanvas();
 
@@ -129,30 +137,50 @@ export default class Canvas {
 		this.ctxStatic.restore();
 	}
 
-	handleClick(event: MouseEvent) {
-		if (get(currentTool) !== ToolType.Selection) return;
+	private handleClick(event: MouseEvent) {
+		if (this.canvasStore.getCurrentTool() !== ToolType.Selection) return;
+
+		if (!this.ctxInteractive) return;
+
+		// Apply translation
+		this.ctxInteractive.save();
+		this.ctxInteractive.translate(this.offsetX, this.offsetY);
 
 		this.clearInteractiveCanvas();
 
+		const shapeSelected = this.hasSelectedShape(event);
+		if (shapeSelected) {
+			this.canvasStore.setCurrentShape(shapeSelected);
+			this.shapeEntity.selectShape(shapeSelected);
+		} else {
+			this.shapeEntity.clearSelection();
+		}
+
+		// Restore translation
+		this.ctxInteractive.restore();
+	}
+
+	private hasSelectedShape(event: MouseEvent) {
 		const { x, y } = this.getMousePosition(event);
 
-		for (const shape of this.store.getShapes()) {
+		for (const shape of this.canvasStore.getShapes()) {
 			const isSelected = this.shapeEntity.isShapeSelected(shape, x, y);
 			if (isSelected) {
-				return this.shapeEntity.selectShape(shape);
+				return shape;
 			}
 		}
 
-		this.shapeEntity.clearSelection();
+		return null;
 	}
 
-	handleWheel(event: WheelEvent) {
+	private handleWheel(event: WheelEvent) {
 		event.preventDefault();
 
 		this.offsetX -= event.deltaX;
 		this.offsetY -= event.deltaY;
 
-		this.draw();
+		this.drawStaticCanvas();
+		this.drawInteractiveCanvas();
 	}
 
 	resizeCanvas() {
@@ -173,10 +201,11 @@ export default class Canvas {
 		this.canvasInteractive.style.height = `${innerHeight}px`;
 		this.ctxInteractive.scale(devicePixelRatio, devicePixelRatio);
 
-		this.draw();
+		this.drawStaticCanvas();
+		this.drawInteractiveCanvas();
 	}
 
-	private draw() {
+	private drawStaticCanvas() {
 		if (!this.ctxStatic) return;
 
 		this.clearStaticCanvas();
@@ -189,7 +218,7 @@ export default class Canvas {
 		this.ctxStatic.fillStyle = '#f0f0f0';
 		this.ctxStatic.fillRect(-10000, -10000, 20000, 20000);
 
-		for (const shape of this.store.getShapes()) {
+		for (const shape of this.canvasStore.getShapes()) {
 			this.shapeEntity.drawShape(shape);
 		}
 
@@ -197,21 +226,36 @@ export default class Canvas {
 		this.ctxStatic.restore();
 	}
 
+	private drawInteractiveCanvas() {
+		if (!this.ctxInteractive) return;
+
+		this.clearInteractiveCanvas();
+
+		// Apply translation
+		this.ctxInteractive.save();
+		this.ctxInteractive.translate(this.offsetX, this.offsetY);
+
+		const currentShape = this.canvasStore.getCurrentShape();
+		if (currentShape) {
+			this.shapeEntity.selectShape(currentShape);
+		}
+
+		// Restore translation
+		this.ctxInteractive.restore();
+	}
+
 	private clearStaticCanvas() {
 		if (!this.ctxStatic) return;
 
-		this.ctxStatic.clearRect(0, 0, this.canvasStatic.width, this.canvasStatic.height);
+		const { width, height } = this.canvasStatic;
+		this.ctxStatic.clearRect(0, 0, width, height);
 	}
 
 	private clearInteractiveCanvas() {
 		if (!this.ctxInteractive) return;
 
-		this.ctxInteractive.clearRect(
-			0,
-			0,
-			this.canvasInteractive.width,
-			this.canvasInteractive.height
-		);
+		const { width, height } = this.canvasInteractive;
+		this.ctxInteractive.clearRect(0, 0, width, height);
 	}
 
 	private getMousePosition(event: MouseEvent) {
