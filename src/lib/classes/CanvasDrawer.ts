@@ -149,7 +149,7 @@ export default class CanvasDrawer {
 		canvas.context.clearRect(0, 0, width, height);
 	}
 
-	private getMousePosition(event: MouseEvent) {
+	getMousePosition(event: MouseEvent) {
 		const canvasRect = this.canvasStatic.html.getBoundingClientRect();
 
 		const { x: offsetX, y: offsetY } = this.canvasStore.getOffset();

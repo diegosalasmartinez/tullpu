@@ -65,7 +65,7 @@ export default class Canvas {
 	}
 
 	private handleMouseDown(event: MouseEvent) {
-		const { x, y } = this.getMousePosition(event);
+		const { x, y } = this.canvasDrawer.getMousePosition(event);
 		this.canvasStore.setStartPosition({ x, y });
 
 		const shapeSelected = this.canvasDrawer.hasSelectedShape(event);
@@ -133,15 +133,5 @@ export default class Canvas {
 
 		this.canvasDrawer.drawCanvasStatic();
 		this.canvasDrawer.drawCanvasInteractive();
-	}
-
-	private getMousePosition(event: MouseEvent) {
-		const canvasRect = this.canvasStatic.html.getBoundingClientRect();
-
-		const { x: offsetX, y: offsetY } = this.canvasStore.getOffset();
-		const currentX = event.clientX - canvasRect.left - offsetX;
-		const currentY = event.clientY - canvasRect.top - offsetY;
-
-		return { x: currentX, y: currentY };
 	}
 }
