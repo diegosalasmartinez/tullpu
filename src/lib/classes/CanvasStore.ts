@@ -1,21 +1,31 @@
-import { ToolType, type Shape } from '$lib/types';
-import { currentTool as currentToolStore } from '$lib/stores/ToolStore';
-import { currentShape as currentShapeStore } from '$lib/stores/ShapeStore';
+import { ToolType, type Shape, type Coords } from '$lib/types';
+import { currentTool } from '$lib/stores/ToolStore';
+import { currentShape } from '$lib/stores/ShapeStore';
+import { currentOffset, currentStartPosition } from '$lib/stores/CoordsStore';
 
 export default class CanvasStore {
 	private shapes: Shape[] = [];
-	private currentTool: ToolType = ToolType.Selection;
-	private currentShape: Shape | null = null;
+
+	private tool: ToolType = ToolType.SELECTION;
+	private shape: Shape | null = null;
+	private offset: Coords = { x: 0, y: 0 };
+	private startPosition: Coords = { x: 0, y: 0 };
 
 	constructor() {
 		this.loadShapes();
 
 		// Subscribe to stores
-		currentToolStore.subscribe((tool) => {
-			this.currentTool = tool;
+		currentTool.subscribe((tool) => {
+			this.tool = tool;
 		});
-		currentShapeStore.subscribe((shape) => {
-			this.currentShape = shape;
+		currentShape.subscribe((shape) => {
+			this.shape = shape;
+		});
+		currentOffset.subscribe((offset) => {
+			this.offset = offset;
+		});
+		currentStartPosition.subscribe((position) => {
+			this.startPosition = position;
 		});
 	}
 
@@ -36,15 +46,35 @@ export default class CanvasStore {
 	}
 
 	getCurrentTool() {
-		return this.currentTool;
+		return this.tool;
+	}
+
+	setCurrentTool(tool: ToolType) {
+		currentTool.set(tool);
 	}
 
 	getCurrentShape() {
-		return this.currentShape;
+		return this.shape;
 	}
 
-	setCurrentShape(shape: Shape) {
-		currentShapeStore.set(shape);
+	setCurrentShape(shape: Shape | null) {
+		currentShape.set(shape);
+	}
+
+	getOffset() {
+		return this.offset;
+	}
+
+	setOffset(offset: Coords) {
+		currentOffset.set(offset);
+	}
+
+	getStartPosition() {
+		return this.startPosition;
+	}
+
+	setStartPosition(position: Coords) {
+		currentStartPosition.set(position);
 	}
 
 	private saveToLocalStorage(key: string, value: string) {

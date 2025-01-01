@@ -1,12 +1,28 @@
-export enum ToolType {
-	Selection = 'selection',
-	Line = 'line',
-	Rectangle = 'rectangle'
+export enum ActionType {
+	IDLE = 'IDLE',
+	DRAW = 'DRAW',
+	EDIT = 'EDIT'
 }
+
+export enum ToolType {
+	SELECTION = 'SELECTION',
+	LINE = 'LINE',
+	RECTANGLE = 'RECTANGLE'
+}
+
+export type CanvasInstance = {
+	html: HTMLCanvasElement;
+	context: CanvasRenderingContext2D;
+};
+
+export type Coords = {
+	x: number;
+	y: number;
+};
 
 export type Line = {
 	id: string;
-	type: ToolType.Line;
+	type: ToolType.LINE;
 	x1: number;
 	y1: number;
 	x2: number;
@@ -15,7 +31,7 @@ export type Line = {
 
 export type Rectangle = {
 	id: string;
-	type: ToolType.Rectangle;
+	type: ToolType.RECTANGLE;
 	x: number;
 	y: number;
 	width: number;

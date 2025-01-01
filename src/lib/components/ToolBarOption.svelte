@@ -7,9 +7,9 @@
 	import { currentTool } from '$lib/stores/ToolStore';
 
 	const options: { name: string; value: ToolType; icon: Component }[] = [
-		{ name: 'Selection', value: ToolType.Selection, icon: ArrowIcon },
-		{ name: 'Rectangle', value: ToolType.Rectangle, icon: RectangleIcon },
-		{ name: 'Line', value: ToolType.Line, icon: LineIcon }
+		{ name: 'Selection', value: ToolType.SELECTION, icon: ArrowIcon },
+		{ name: 'Rectangle', value: ToolType.RECTANGLE, icon: RectangleIcon },
+		{ name: 'Line', value: ToolType.LINE, icon: LineIcon }
 	];
 </script>
 

@@ -1,34 +1,23 @@
-import { type Line, ToolType } from '$lib/types';
+import { type Line, type CanvasInstance, ToolType } from '$lib/types';
 
 export default class LineEntity {
-	private ctxStatic: CanvasRenderingContext2D | null;
-	private ctxInteractive: CanvasRenderingContext2D | null;
+	private canvasStatic: CanvasInstance;
+	private canvasInteractive: CanvasInstance;
 
-	constructor(
-		ctxStatic: CanvasRenderingContext2D | null,
-		ctxInteractive: CanvasRenderingContext2D | null
-	) {
-		this.ctxStatic = ctxStatic;
-		this.ctxInteractive = ctxInteractive;
+	constructor(canvasStatic: CanvasInstance, canvasInteractive: CanvasInstance) {
+		this.canvasStatic = canvasStatic;
+		this.canvasInteractive = canvasInteractive;
 	}
 
 	drawCoords(x1: number, y1: number, x2: number, y2: number) {
-		this.draw(x1, y1, x2, y2, this.ctxInteractive);
+		this.draw(x1, y1, x2, y2, this.canvasInteractive.context);
 	}
 
 	drawShape(shape: Line) {
-		this.draw(shape.x1, shape.y1, shape.x2, shape.y2, this.ctxStatic);
+		this.draw(shape.x1, shape.y1, shape.x2, shape.y2, this.canvasStatic.context);
 	}
 
-	private draw(
-		x1: number,
-		y1: number,
-		x2: number,
-		y2: number,
-		ctx: CanvasRenderingContext2D | null
-	) {
-		if (!ctx) return;
-
+	private draw(x1: number, y1: number, x2: number, y2: number, ctx: CanvasRenderingContext2D) {
 		ctx.strokeStyle = 'black';
 		ctx.lineWidth = 1;
 		ctx.beginPath();
@@ -40,7 +29,7 @@ export default class LineEntity {
 	createShape(x1: number, y1: number, x2: number, y2: number) {
 		const line: Line = {
 			id: crypto.randomUUID(),
-			type: ToolType.Line,
+			type: ToolType.LINE,
 			x1,
 			y1,
 			x2,
@@ -90,20 +79,18 @@ export default class LineEntity {
 	}
 
 	select(shape: Line) {
-		if (!this.ctxInteractive) return;
-
-		this.ctxInteractive.fillStyle = 'purple';
+		this.canvasInteractive.context.fillStyle = 'purple';
 
 		// Draw circle at the start of the line
-		this.ctxInteractive.beginPath();
-		this.ctxInteractive.arc(shape.x1, shape.y1, 5, 0, Math.PI * 2);
-		this.ctxInteractive.fill();
-		this.ctxInteractive.closePath();
+		this.canvasInteractive.context.beginPath();
+		this.canvasInteractive.context.arc(shape.x1, shape.y1, 5, 0, Math.PI * 2);
+		this.canvasInteractive.context.fill();
+		this.canvasInteractive.context.closePath();
 
 		// Draw circle at the end of the line
-		this.ctxInteractive.beginPath();
-		this.ctxInteractive.arc(shape.x2, shape.y2, 5, 0, Math.PI * 2);
-		this.ctxInteractive.fill();
-		this.ctxInteractive.closePath();
+		this.canvasInteractive.context.beginPath();
+		this.canvasInteractive.context.arc(shape.x2, shape.y2, 5, 0, Math.PI * 2);
+		this.canvasInteractive.context.fill();
+		this.canvasInteractive.context.closePath();
 	}
 }
