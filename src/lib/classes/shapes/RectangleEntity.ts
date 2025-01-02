@@ -1,4 +1,4 @@
-import { type Rectangle, type CanvasInstance, ToolType } from '$lib/types';
+import { type Rectangle, type CanvasInstance, type Coords, ToolType } from '$lib/types';
 
 export default class RectangleEntity {
 	private canvasStatic: CanvasInstance;
@@ -9,30 +9,35 @@ export default class RectangleEntity {
 		this.canvasInteractive = canvasInteractive;
 	}
 
-	drawCoords(x1: number, y1: number, x2: number, y2: number) {
-		this.draw(x1, y1, x2 - x1, y2 - y1, this.canvasInteractive.context);
+	drawCoords(coordsStart: Coords, coordsEnd: Coords) {
+		this.draw(
+			coordsStart,
+			coordsEnd.x - coordsStart.x,
+			coordsEnd.y - coordsStart.y,
+			this.canvasInteractive.context
+		);
 	}
 
 	drawShape(shape: Rectangle) {
-		this.draw(shape.x, shape.y, shape.width, shape.height, this.canvasStatic.context);
+		this.draw(shape.coords, shape.width, shape.height, this.canvasStatic.context);
 	}
 
-	private draw(x: number, y: number, width: number, height: number, ctx: CanvasRenderingContext2D) {
+	private draw(coords: Coords, width: number, height: number, ctx: CanvasRenderingContext2D) {
 		ctx.strokeStyle = 'black';
-		ctx.strokeRect(x, y, width, height);
+		ctx.strokeRect(coords.x, coords.y, width, height);
 	}
 
-	createShape(x1: number, y1: number, x2: number, y2: number) {
-		const line: Rectangle = {
+	createShape(coordsStart: Coords, coordsEnd: Coords) {
+		const shape: Rectangle = {
 			id: crypto.randomUUID(),
 			type: ToolType.RECTANGLE,
-			x: x1,
-			y: y1,
-			width: x2 - x1,
-			height: y2 - y1
+			coords: coordsStart,
+			width: coordsEnd.x - coordsStart.x,
+			height: coordsEnd.y - coordsStart.y,
+			nodes: []
 		};
 
-		return line;
+		return shape;
 	}
 
 	isClicked(shape: Rectangle, x: number, y: number) {}

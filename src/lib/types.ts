@@ -20,22 +20,25 @@ export type Coords = {
 	y: number;
 };
 
+export type Node = {
+	id: string;
+} & Coords;
+
 export type Line = {
 	id: string;
 	type: ToolType.LINE;
-	x1: number;
-	y1: number;
-	x2: number;
-	y2: number;
+	coordsStart: Coords;
+	coordsEnd: Coords;
+	nodes: Node[];
 };
 
 export type Rectangle = {
 	id: string;
 	type: ToolType.RECTANGLE;
-	x: number;
-	y: number;
+	coords: Coords;
 	width: number;
 	height: number;
+	nodes: Node[];
 };
 
 export type Shape = Line | Rectangle;

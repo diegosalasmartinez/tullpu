@@ -1,4 +1,4 @@
-import { type Line, type CanvasInstance, ToolType } from '$lib/types';
+import { type Line, type CanvasInstance, type Node, type Coords, ToolType } from '$lib/types';
 
 export default class LineEntity {
 	private canvasStatic: CanvasInstance;
@@ -9,15 +9,18 @@ export default class LineEntity {
 		this.canvasInteractive = canvasInteractive;
 	}
 
-	drawCoords(x1: number, y1: number, x2: number, y2: number) {
-		this.draw(x1, y1, x2, y2, this.canvasInteractive.context);
+	drawCoords(coordsStart: Coords, coordsEnd: Coords) {
+		this.draw(coordsStart, coordsEnd, this.canvasInteractive.context);
 	}
 
 	drawShape(shape: Line) {
-		this.draw(shape.x1, shape.y1, shape.x2, shape.y2, this.canvasStatic.context);
+		this.draw(shape.coordsStart, shape.coordsEnd, this.canvasStatic.context);
 	}
 
-	private draw(x1: number, y1: number, x2: number, y2: number, ctx: CanvasRenderingContext2D) {
+	private draw(coordsStart: Coords, coordsEnd: Coords, ctx: CanvasRenderingContext2D) {
+		const { x: x1, y: y1 } = coordsStart;
+		const { x: x2, y: y2 } = coordsEnd;
+
 		ctx.strokeStyle = 'black';
 		ctx.lineWidth = 1;
 		ctx.beginPath();
@@ -26,21 +29,37 @@ export default class LineEntity {
 		ctx.stroke();
 	}
 
-	createShape(x1: number, y1: number, x2: number, y2: number) {
-		const line: Line = {
+	createShape(coordsStart: Coords, coordsEnd: Coords) {
+		const shape: Line = {
 			id: crypto.randomUUID(),
 			type: ToolType.LINE,
-			x1,
-			y1,
-			x2,
-			y2
+			coordsStart,
+			coordsEnd,
+			nodes: this.createNodes(coordsStart, coordsEnd)
 		};
 
-		return line;
+		return shape;
+	}
+
+	private createNodes(coordsStart: Coords, coordsEnd: Coords) {
+		const startNode: Node = {
+			id: crypto.randomUUID(),
+			x: coordsStart.x,
+			y: coordsStart.y
+		};
+
+		const endNode: Node = {
+			id: crypto.randomUUID(),
+			x: coordsEnd.x,
+			y: coordsEnd.y
+		};
+
+		return [startNode, endNode];
 	}
 
 	isClicked(shape: Line, x: number, y: number) {
-		const { x1, y1, x2, y2 } = shape;
+		const { x: x1, y: y1 } = shape.coordsStart;
+		const { x: x2, y: y2 } = shape.coordsEnd;
 
 		const minDistance = 7;
 
@@ -81,16 +100,12 @@ export default class LineEntity {
 	select(shape: Line) {
 		this.canvasInteractive.context.fillStyle = 'purple';
 
-		// Draw circle at the start of the line
-		this.canvasInteractive.context.beginPath();
-		this.canvasInteractive.context.arc(shape.x1, shape.y1, 5, 0, Math.PI * 2);
-		this.canvasInteractive.context.fill();
-		this.canvasInteractive.context.closePath();
-
-		// Draw circle at the end of the line
-		this.canvasInteractive.context.beginPath();
-		this.canvasInteractive.context.arc(shape.x2, shape.y2, 5, 0, Math.PI * 2);
-		this.canvasInteractive.context.fill();
-		this.canvasInteractive.context.closePath();
+		// Draw circle at the start and end of the line
+		for (const node of shape.nodes) {
+			this.canvasInteractive.context.beginPath();
+			this.canvasInteractive.context.arc(node.x, node.y, 5, 0, Math.PI * 2);
+			this.canvasInteractive.context.fill();
+			this.canvasInteractive.context.closePath();
+		}
 	}
 }

@@ -1,4 +1,4 @@
-import { type CanvasInstance } from '$lib/types';
+import { type CanvasInstance, type Shape, type Node, type Coords } from '$lib/types';
 import CanvasStore from './CanvasStore';
 import ShapeEntity from './ShapeEntity';
 
@@ -7,6 +7,8 @@ export default class CanvasDrawer {
 	private canvasInteractive: CanvasInstance;
 	private canvasStore: CanvasStore;
 	private shapeEntity: ShapeEntity;
+
+	private nodeSelected: Node | null = null;
 
 	constructor(
 		canvasStatic: CanvasInstance,
@@ -62,7 +64,7 @@ export default class CanvasDrawer {
 	}
 
 	drawing(event: MouseEvent) {
-		const { x, y } = this.getMousePosition(event);
+		const coordsMouse = this.getMousePosition(event);
 
 		// Clear interactive canvas
 		this.clearCanvas(this.canvasInteractive);
@@ -73,21 +75,21 @@ export default class CanvasDrawer {
 		this.canvasInteractive.context.translate(offsetX, offsetY);
 
 		// Draw shape to interactive canvas
-		const { x: startX, y: startY } = this.canvasStore.getStartPosition();
-		this.shapeEntity.drawCoords(startX, startY, x, y);
+		const coordsStart = this.canvasStore.getStartPosition();
+		this.shapeEntity.drawCoords(coordsStart, coordsMouse);
 
 		// Restore translation
 		this.canvasInteractive.context.restore();
 	}
 
 	stopDrawing(event: MouseEvent) {
-		const { x, y } = this.getMousePosition(event);
+		const coordsMouse = this.getMousePosition(event);
 
 		// Validate it's not the same point
-		const { x: startX, y: startY } = this.canvasStore.getStartPosition();
-		if (startX === x && startY === y) return;
+		const coordsStart = this.canvasStore.getStartPosition();
+		if (coordsStart.x === coordsMouse.x && coordsStart.y === coordsMouse.y) return;
 
-		const shape = this.shapeEntity.createShape(startX, startY, x, y);
+		const shape = this.shapeEntity.createShape(coordsStart, coordsMouse);
 		if (!shape) return;
 
 		// Add shape to local storage
@@ -106,6 +108,21 @@ export default class CanvasDrawer {
 
 		// Restore translation
 		this.canvasStatic.context.restore();
+	}
+
+	startEditing(event: MouseEvent, shape: Shape) {
+		const { x, y } = this.getMousePosition(event);
+
+		this.nodeSelected = this.shapeEntity.getNodeSelected(shape, x, y);
+	}
+
+	editing(event: MouseEvent) {
+		const { x, y } = this.getMousePosition(event);
+
+		const { x: startX, y: startY } = this.canvasStore.getStartPosition();
+		console.log('[DIEGO] start', startX, startY);
+		console.log('[DIEGO] here', x, y);
+		console.log('[DIEGO] nodeSelected', this.nodeSelected);
 	}
 
 	click(event: MouseEvent) {
@@ -149,7 +166,7 @@ export default class CanvasDrawer {
 		canvas.context.clearRect(0, 0, width, height);
 	}
 
-	getMousePosition(event: MouseEvent) {
+	getMousePosition(event: MouseEvent): Coords {
 		const canvasRect = this.canvasStatic.html.getBoundingClientRect();
 
 		const { x: offsetX, y: offsetY } = this.canvasStore.getOffset();

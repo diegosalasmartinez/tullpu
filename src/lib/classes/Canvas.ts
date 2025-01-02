@@ -70,6 +70,7 @@ export default class Canvas {
 
 		const shapeSelected = this.canvasDrawer.hasSelectedShape(event);
 		if (shapeSelected) {
+			this.canvasDrawer.startEditing(event, shapeSelected);
 			this.action = ActionType.EDIT;
 		} else {
 			this.action = ActionType.DRAW;
@@ -78,7 +79,7 @@ export default class Canvas {
 
 	private handleMouseMove(event: MouseEvent) {
 		if (this.action === ActionType.EDIT) {
-			// TODO: Edit shape
+			this.canvasDrawer.editing(event);
 		} else if (this.action === ActionType.DRAW) {
 			this.canvasDrawer.drawing(event);
 		}
