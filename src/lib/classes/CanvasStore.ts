@@ -45,6 +45,11 @@ export default class CanvasStore {
 		this.saveToLocalStorage('shapes', JSON.stringify(this.shapes));
 	}
 
+	removeShape(shape: Shape) {
+		this.shapes = this.shapes.filter((s) => s.id !== shape.id);
+		this.saveToLocalStorage('shapes', JSON.stringify(this.shapes));
+	}
+
 	getCurrentTool() {
 		return this.tool;
 	}
@@ -54,7 +59,8 @@ export default class CanvasStore {
 	}
 
 	getCurrentShape() {
-		return this.shape;
+        // Prevent direct access to the shape object
+		return { ...this.shape };
 	}
 
 	setCurrentShape(shape: Shape | null) {

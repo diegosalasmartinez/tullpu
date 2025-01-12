@@ -15,6 +15,11 @@ export type CanvasInstance = {
 	context: CanvasRenderingContext2D;
 };
 
+export enum CanvasType {
+	STATIC = 'STATIC',
+	INTERACTIVE = 'INTERACTIVE'
+}
+
 export type Coords = {
 	x: number;
 	y: number;

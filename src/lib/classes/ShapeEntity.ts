@@ -1,8 +1,15 @@
 import { get } from 'svelte/store';
-import { type Shape, type CanvasInstance, type Coords, ToolType } from '$lib/types';
+import {
+	type Shape,
+	type Node,
+	type CanvasInstance,
+	type Coords,
+	ToolType,
+	CanvasType
+} from '$lib/types';
 import { currentTool } from '$lib/stores/ToolStore';
-import LineEntity from '$lib/classes/shapes/LineEntity';
 import RectangleEntity from '$lib/classes/shapes/RectangleEntity';
+import LineEntity from '$lib/classes/shapes/LineEntity';
 
 export default class ShapeEntity {
 	private lineEntity: LineEntity;
@@ -25,10 +32,10 @@ export default class ShapeEntity {
 		}
 	}
 
-	drawShape(shape: Shape) {
+	drawShape(shape: Shape, canvasType?: CanvasType) {
 		switch (shape.type) {
 			case ToolType.LINE:
-				return this.lineEntity.drawShape(shape);
+				return this.lineEntity.drawShape(shape, canvasType);
 			case ToolType.RECTANGLE:
 				return this.rectangleEntity.drawShape(shape);
 			default:
@@ -49,12 +56,10 @@ export default class ShapeEntity {
 		return null;
 	}
 
-	isShapeSelected(shape: Shape, x: number, y: number) {
+	isShapeSelected(shape: Shape, coords: Coords) {
 		switch (shape.type) {
 			case ToolType.LINE:
-				return this.lineEntity.isClicked(shape, x, y);
-			//case ToolType.RECTANGLE:
-			//    return this.rectangleEntity.isClicked(shape, x, y);
+				return this.lineEntity.isClicked(shape, coords);
 			default:
 				return false;
 		}
@@ -64,14 +69,23 @@ export default class ShapeEntity {
 		switch (shape.type) {
 			case ToolType.LINE:
 				return this.lineEntity.select(shape);
-			//case ToolType.RECTANGLE:
-			//    return this.rectangleEntity.select(shape);
 			default:
 				return null;
 		}
 	}
 
-	getNodeSelected(shape: Shape, x: number, y: number) {
+	updateShape(shape: Shape, coordsStart: Coords, coordsEnd: Coords, node: Node | null) {
+		switch (shape.type) {
+			case ToolType.LINE:
+				return this.lineEntity.updateShape(shape, coordsStart, coordsEnd, node);
+			default:
+				return null;
+		}
+	}
+
+	getNodeSelected(shape: Shape, coords: Coords) {
+		const { x, y } = coords;
+
 		for (const node of shape.nodes) {
 			if (
 				x >= node.x - this.proximityRadius &&

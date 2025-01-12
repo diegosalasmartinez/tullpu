@@ -65,10 +65,12 @@ export default class Canvas {
 	}
 
 	private handleMouseDown(event: MouseEvent) {
-		const { x, y } = this.canvasDrawer.getMousePosition(event);
-		this.canvasStore.setStartPosition({ x, y });
+		console.log('[mouse_down]');
+		const coords = this.canvasDrawer.getMousePosition(event);
+		this.canvasStore.setStartPosition(coords);
 
 		const shapeSelected = this.canvasDrawer.hasSelectedShape(event);
+
 		if (shapeSelected) {
 			this.canvasDrawer.startEditing(event, shapeSelected);
 			this.action = ActionType.EDIT;
@@ -78,6 +80,7 @@ export default class Canvas {
 	}
 
 	private handleMouseMove(event: MouseEvent) {
+		console.log('[mouse_move]');
 		if (this.action === ActionType.EDIT) {
 			this.canvasDrawer.editing(event);
 		} else if (this.action === ActionType.DRAW) {
@@ -86,8 +89,9 @@ export default class Canvas {
 	}
 
 	private handleMouseUp(event: MouseEvent) {
+		console.log('[mouse_up] action:', this.action);
 		if (this.action === ActionType.EDIT) {
-			// TODO: Finish editing shape
+			this.canvasDrawer.stopEditing(event);
 		} else if (this.action === ActionType.DRAW) {
 			this.canvasDrawer.stopDrawing(event);
 		}
@@ -96,6 +100,7 @@ export default class Canvas {
 	}
 
 	private handleClick(event: MouseEvent) {
+		console.log('[mouse_click]');
 		if (this.canvasStore.getCurrentTool() !== ToolType.SELECTION) return;
 
 		this.canvasDrawer.click(event);

@@ -1,4 +1,11 @@
-import { type Line, type CanvasInstance, type Node, type Coords, ToolType } from '$lib/types';
+import {
+	type Line,
+	type CanvasInstance,
+	type Node,
+	type Coords,
+	CanvasType,
+	ToolType
+} from '$lib/types';
 
 export default class LineEntity {
 	private canvasStatic: CanvasInstance;
@@ -13,8 +20,16 @@ export default class LineEntity {
 		this.draw(coordsStart, coordsEnd, this.canvasInteractive.context);
 	}
 
-	drawShape(shape: Line) {
-		this.draw(shape.coordsStart, shape.coordsEnd, this.canvasStatic.context);
+	drawShape(shape: Line, canvasType?: CanvasType) {
+		let ctx;
+
+		if (!canvasType || canvasType === CanvasType.STATIC) {
+			ctx = this.canvasStatic.context;
+		} else {
+			ctx = this.canvasInteractive.context;
+		}
+
+		this.draw(shape.coordsStart, shape.coordsEnd, ctx);
 	}
 
 	private draw(coordsStart: Coords, coordsEnd: Coords, ctx: CanvasRenderingContext2D) {
@@ -57,7 +72,9 @@ export default class LineEntity {
 		return [startNode, endNode];
 	}
 
-	isClicked(shape: Line, x: number, y: number) {
+	isClicked(shape: Line, coords: Coords) {
+		const { x, y } = coords;
+
 		const { x: x1, y: y1 } = shape.coordsStart;
 		const { x: x2, y: y2 } = shape.coordsEnd;
 
@@ -98,14 +115,58 @@ export default class LineEntity {
 	}
 
 	select(shape: Line) {
-		this.canvasInteractive.context.fillStyle = 'purple';
+		const coords = shape.nodes.map((node) => ({ x: node.x, y: node.y }));
+		this.drawCoordsInteractive(coords);
+	}
 
-		// Draw circle at the start and end of the line
-		for (const node of shape.nodes) {
+	selectCoords(coordsStart: Coords, coordsEnd: Coords) {
+		const coords = [coordsStart, coordsEnd];
+		this.drawCoordsInteractive(coords);
+	}
+
+	private drawCoordsInteractive(coords: Coords[]) {
+		this.canvasInteractive.context.fillStyle = 'white';
+
+		this.canvasInteractive.context.strokeStyle = '#7dd3fc';
+		this.canvasInteractive.context.lineWidth = 2;
+
+		for (const coord of coords) {
 			this.canvasInteractive.context.beginPath();
-			this.canvasInteractive.context.arc(node.x, node.y, 5, 0, Math.PI * 2);
+			this.canvasInteractive.context.arc(coord.x, coord.y, 5, 0, Math.PI * 2);
 			this.canvasInteractive.context.fill();
+            this.canvasInteractive.context.stroke();
 			this.canvasInteractive.context.closePath();
 		}
+	}
+
+	updateShape(shape: Line, coordsStart: Coords, coordsEnd: Coords, node: Node | null) {
+		if (!node) {
+			// Move the entire shape
+			const dx = coordsEnd.x - coordsStart.x;
+			const dy = coordsEnd.y - coordsStart.y;
+
+			const start = { x: shape.coordsStart.x + dx, y: shape.coordsStart.y + dy };
+			const end = { x: shape.coordsEnd.x + dx, y: shape.coordsEnd.y + dy };
+
+			return this.updateCoords(shape, start, end);
+		}
+
+		// We need to update the node that was clicked
+		// And use the other node as the start node
+		const startNode = shape.nodes.filter((n) => n.id !== node.id)[0];
+		if (!startNode) return shape;
+
+		const start = { x: startNode.x, y: startNode.y };
+		const end = coordsEnd;
+
+		return this.updateCoords(shape, start, end);
+	}
+
+	updateCoords(shape: Line, coordsStart: Coords, coordsEnd: Coords) {
+		shape.coordsStart = coordsStart;
+		shape.coordsEnd = coordsEnd;
+		shape.nodes = this.createNodes(coordsStart, coordsEnd);
+
+		return shape;
 	}
 }

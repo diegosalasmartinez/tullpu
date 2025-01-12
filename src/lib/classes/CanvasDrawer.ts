@@ -1,4 +1,4 @@
-import { type CanvasInstance, type Shape, type Node, type Coords } from '$lib/types';
+import { CanvasType, type CanvasInstance, type Shape, type Node, type Coords } from '$lib/types';
 import CanvasStore from './CanvasStore';
 import ShapeEntity from './ShapeEntity';
 
@@ -28,8 +28,8 @@ export default class CanvasDrawer {
 
 		this.drawCanvasCallback(this.canvasStatic, () => {
 			// Draw background
-			this.canvasStatic.context.fillStyle = '#f0f0f0';
-			this.canvasStatic.context.fillRect(-10000, -10000, 20000, 20000);
+			//this.canvasStatic.context.fillStyle = '#f0f0f0';
+			//this.canvasStatic.context.fillRect(-10000, -10000, 20000, 20000);
 
 			// Draw shapes
 			for (const shape of this.canvasStore.getShapes()) {
@@ -66,10 +66,10 @@ export default class CanvasDrawer {
 
 	stopDrawing(event: MouseEvent) {
 		const coordsMouse = this.getMousePosition(event);
+		const coordsStart = this.canvasStore.getStartPosition();
 
 		// Validate it's not the same point
-		const coordsStart = this.canvasStore.getStartPosition();
-		if (coordsStart.x === coordsMouse.x && coordsStart.y === coordsMouse.y) return;
+		if (this.validateIsSamePoint(coordsStart, coordsMouse)) return;
 
 		const shape = this.shapeEntity.createShape(coordsStart, coordsMouse);
 		if (!shape) return;
@@ -87,15 +87,93 @@ export default class CanvasDrawer {
 	}
 
 	startEditing(event: MouseEvent, shape: Shape) {
-		const { x, y } = this.getMousePosition(event);
+		const coords = this.getMousePosition(event);
 
-		this.nodeSelected = this.shapeEntity.getNodeSelected(shape, x, y);
+		this.canvasStore.setCurrentShape(shape);
+		this.nodeSelected = this.shapeEntity.getNodeSelected(shape, coords);
+
+		// Remove shape from local storage
+		// It will be added again when the user finishes editing
+		this.canvasStore.removeShape(shape);
+
+		// Draw static canvas without the selected shape
+		this.drawCanvasStatic();
+
+		this.drawCanvasCallback(this.canvasInteractive, () => {
+			// Draw shape to static canvas
+			this.shapeEntity.drawShape(shape, CanvasType.INTERACTIVE);
+		});
 	}
 
 	editing(event: MouseEvent) {
-		const { x, y } = this.getMousePosition(event);
+		const shapeSelected = this.canvasStore.getCurrentShape();
+		if (!shapeSelected) return;
 
-		const { x: startX, y: startY } = this.canvasStore.getStartPosition();
+		// Clear interactive canvas
+		this.clearCanvas(this.canvasInteractive);
+
+		this.drawCanvasCallback(this.canvasInteractive, () => {
+			// Draw shape to interactive canvas
+			const coordsStartPosition = this.canvasStore.getStartPosition();
+			const coordsMouse = this.getMousePosition(event);
+
+			const shapeUpdated = this.shapeEntity.updateShape(
+				shapeSelected,
+				coordsStartPosition,
+				coordsMouse,
+				this.nodeSelected
+			);
+			if (!shapeUpdated) return;
+
+			// Draw new coords
+			this.shapeEntity.drawShape(shapeUpdated, CanvasType.INTERACTIVE);
+            //this.canvasStore.setCurrentShape(shapeUpdated);
+			this.shapeEntity.selectShape(shapeSelected);
+		});
+	}
+
+	stopEditing(event: MouseEvent) {
+		const shapeSelected = this.canvasStore.getCurrentShape();
+		if (!shapeSelected) return;
+
+		const coordsStartPosition = this.canvasStore.getStartPosition();
+		const coordsMouse = this.getMousePosition(event);
+
+		// Validate it's not the same point
+		if (this.validateIsSamePoint(coordsStartPosition, coordsMouse)) {
+			// Clear interactive canvas
+			this.clearCanvas(this.canvasInteractive);
+
+			// Add shape to local storage
+			this.canvasStore.addShape(shapeSelected);
+
+			this.drawCanvasCallback(this.canvasStatic, () => {
+				// Draw shape to static canvas
+				this.shapeEntity.drawShape(shapeSelected);
+			});
+		} else {
+			const shapeUpdated = this.shapeEntity.updateShape(
+				shapeSelected,
+				coordsStartPosition,
+				coordsMouse,
+				this.nodeSelected
+			);
+			if (!shapeUpdated) return;
+
+			// Clear interactive canvas
+			this.clearCanvas(this.canvasInteractive);
+
+			// Add shape to local storage
+			this.canvasStore.addShape(shapeUpdated);
+
+            // Set current shape
+            this.canvasStore.setCurrentShape(shapeUpdated);
+
+			this.drawCanvasCallback(this.canvasStatic, () => {
+				// Draw shape to static canvas
+				this.shapeEntity.drawShape(shapeUpdated);
+			});
+		}
 	}
 
 	click(event: MouseEvent) {
@@ -115,10 +193,10 @@ export default class CanvasDrawer {
 	}
 
 	hasSelectedShape(event: MouseEvent) {
-		const { x, y } = this.getMousePosition(event);
+		const coords = this.getMousePosition(event);
 
 		for (const shape of this.canvasStore.getShapes()) {
-			const isSelected = this.shapeEntity.isShapeSelected(shape, x, y);
+			const isSelected = this.shapeEntity.isShapeSelected(shape, coords);
 			if (isSelected) {
 				return shape;
 			}
@@ -153,5 +231,10 @@ export default class CanvasDrawer {
 
 		// Restore translation
 		canvas.context.restore();
+	}
+
+	private validateIsSamePoint(coordsStart: Coords, coordsMouse: Coords) {
+		if (coordsStart.x === coordsMouse.x && coordsStart.y === coordsMouse.y) return true;
+		return false;
 	}
 }
