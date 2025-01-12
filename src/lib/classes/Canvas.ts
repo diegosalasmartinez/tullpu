@@ -75,6 +75,7 @@ export default class Canvas {
 			this.canvasDrawer.startEditing(event, shapeSelected);
 			this.action = ActionType.EDIT;
 		} else {
+            this.canvasDrawer.startDrawing(event);
 			this.action = ActionType.DRAW;
 		}
 	}

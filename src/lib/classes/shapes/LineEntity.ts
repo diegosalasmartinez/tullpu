@@ -119,11 +119,6 @@ export default class LineEntity {
 		this.drawCoordsInteractive(coords);
 	}
 
-	selectCoords(coordsStart: Coords, coordsEnd: Coords) {
-		const coords = [coordsStart, coordsEnd];
-		this.drawCoordsInteractive(coords);
-	}
-
 	private drawCoordsInteractive(coords: Coords[]) {
 		this.canvasInteractive.context.fillStyle = 'white';
 

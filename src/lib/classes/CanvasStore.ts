@@ -59,8 +59,11 @@ export default class CanvasStore {
 	}
 
 	getCurrentShape() {
+        if (!this.shape) return null;
+
         // Prevent direct access to the shape object
-		return { ...this.shape };
+		const shapeCopy: Shape = { ...this.shape };
+        return shapeCopy
 	}
 
 	setCurrentShape(shape: Shape | null) {

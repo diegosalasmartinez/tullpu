@@ -51,6 +51,11 @@ export default class CanvasDrawer {
 		});
 	}
 
+	startDrawing(event: MouseEvent) {
+		// Clear canvas interactive
+		this.clearCanvas(this.canvasInteractive);
+	}
+
 	drawing(event: MouseEvent) {
 		// Clear interactive canvas
 		this.clearCanvas(this.canvasInteractive);
@@ -127,7 +132,6 @@ export default class CanvasDrawer {
 
 			// Draw new coords
 			this.shapeEntity.drawShape(shapeUpdated, CanvasType.INTERACTIVE);
-            //this.canvasStore.setCurrentShape(shapeUpdated);
 			this.shapeEntity.selectShape(shapeSelected);
 		});
 	}
@@ -139,11 +143,11 @@ export default class CanvasDrawer {
 		const coordsStartPosition = this.canvasStore.getStartPosition();
 		const coordsMouse = this.getMousePosition(event);
 
+		// Clear interactive canvas
+		this.clearCanvas(this.canvasInteractive);
+
 		// Validate it's not the same point
 		if (this.validateIsSamePoint(coordsStartPosition, coordsMouse)) {
-			// Clear interactive canvas
-			this.clearCanvas(this.canvasInteractive);
-
 			// Add shape to local storage
 			this.canvasStore.addShape(shapeSelected);
 
@@ -160,14 +164,11 @@ export default class CanvasDrawer {
 			);
 			if (!shapeUpdated) return;
 
-			// Clear interactive canvas
-			this.clearCanvas(this.canvasInteractive);
-
 			// Add shape to local storage
 			this.canvasStore.addShape(shapeUpdated);
 
-            // Set current shape
-            this.canvasStore.setCurrentShape(shapeUpdated);
+			// Set current shape
+			this.canvasStore.setCurrentShape(shapeUpdated);
 
 			this.drawCanvasCallback(this.canvasStatic, () => {
 				// Draw shape to static canvas
@@ -177,18 +178,18 @@ export default class CanvasDrawer {
 	}
 
 	click(event: MouseEvent) {
+		const shapeSelected = this.hasSelectedShape(event);
+		if (!shapeSelected) {
+			return this.canvasStore.setCurrentShape(null);
+		}
+
 		// Clear interactive canvas
 		this.clearCanvas(this.canvasInteractive);
 
 		this.drawCanvasCallback(this.canvasInteractive, () => {
 			// Print selected shape
-			const shapeSelected = this.hasSelectedShape(event);
-			if (shapeSelected) {
-				this.canvasStore.setCurrentShape(shapeSelected);
-				this.shapeEntity.selectShape(shapeSelected);
-			} else {
-				this.canvasStore.setCurrentShape(null);
-			}
+			this.canvasStore.setCurrentShape(shapeSelected);
+			this.shapeEntity.selectShape(shapeSelected);
 		});
 	}
 
