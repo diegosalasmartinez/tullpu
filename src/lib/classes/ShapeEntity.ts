@@ -60,6 +60,8 @@ export default class ShapeEntity {
 		switch (shape.type) {
 			case ToolType.LINE:
 				return this.lineEntity.isClicked(shape, coords);
+			case ToolType.RECTANGLE:
+				return this.rectangleEntity.isClicked(shape, coords);
 			default:
 				return false;
 		}
@@ -69,6 +71,8 @@ export default class ShapeEntity {
 		switch (shape.type) {
 			case ToolType.LINE:
 				return this.lineEntity.select(shape);
+			case ToolType.RECTANGLE:
+				return this.rectangleEntity.select(shape);
 			default:
 				return null;
 		}

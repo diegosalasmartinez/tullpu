@@ -6,6 +6,7 @@ import {
 	CanvasType,
 	ToolType
 } from '$lib/types';
+import { isBetween, minDistance } from '$lib/utils/selection';
 
 export default class LineEntity {
 	private canvasStatic: CanvasInstance;
@@ -37,7 +38,7 @@ export default class LineEntity {
 		const { x: x2, y: y2 } = coordsEnd;
 
 		ctx.strokeStyle = 'black';
-		ctx.lineWidth = 1;
+		ctx.lineWidth = 2;
 		ctx.beginPath();
 		ctx.moveTo(x1, y1);
 		ctx.lineTo(x2, y2);
@@ -78,15 +79,8 @@ export default class LineEntity {
 		const { x: x1, y: y1 } = shape.coordsStart;
 		const { x: x2, y: y2 } = shape.coordsEnd;
 
-		const minDistance = 7;
-
-		const minX = Math.min(x1, x2);
-		const maxX = Math.max(x1, x2);
-		const minY = Math.min(y1, y2);
-		const maxY = Math.max(y1, y2);
-
-		const isWithinX = x >= minX - minDistance && x <= maxX + minDistance;
-		const isWithinY = y >= minY - minDistance && y <= maxY + minDistance;
+        const isWithinX = isBetween(x, x1, x2);
+        const isWithinY = isBetween(y, y1, y2);
 
 		if (!isWithinX || !isWithinY) {
 			return false;
@@ -116,21 +110,18 @@ export default class LineEntity {
 
 	select(shape: Line) {
 		const coords = shape.nodes.map((node) => ({ x: node.x, y: node.y }));
-		this.drawCoordsInteractive(coords);
-	}
+        const ctx = this.canvasInteractive.context;
 
-	private drawCoordsInteractive(coords: Coords[]) {
-		this.canvasInteractive.context.fillStyle = 'white';
-
-		this.canvasInteractive.context.strokeStyle = '#7dd3fc';
-		this.canvasInteractive.context.lineWidth = 2;
+		ctx.fillStyle = 'white';
+		ctx.strokeStyle = '#7dd3fc';
+		ctx.lineWidth = 2;
 
 		for (const coord of coords) {
-			this.canvasInteractive.context.beginPath();
-			this.canvasInteractive.context.arc(coord.x, coord.y, 5, 0, Math.PI * 2);
-			this.canvasInteractive.context.fill();
-            this.canvasInteractive.context.stroke();
-			this.canvasInteractive.context.closePath();
+			ctx.beginPath();
+			ctx.arc(coord.x, coord.y, 5, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.stroke();
+			ctx.closePath();
 		}
 	}
 
