@@ -22,13 +22,10 @@ export default class LineEntity {
 	}
 
 	drawShape(shape: Line, canvasType?: CanvasType) {
-		let ctx;
-
-		if (!canvasType || canvasType === CanvasType.STATIC) {
-			ctx = this.canvasStatic.context;
-		} else {
-			ctx = this.canvasInteractive.context;
-		}
+		const ctx =
+			!canvasType || canvasType === CanvasType.STATIC
+				? this.canvasStatic.context
+				: this.canvasInteractive.context;
 
 		this.draw(shape.coordsStart, shape.coordsEnd, ctx);
 	}
@@ -79,8 +76,8 @@ export default class LineEntity {
 		const { x: x1, y: y1 } = shape.coordsStart;
 		const { x: x2, y: y2 } = shape.coordsEnd;
 
-        const isWithinX = isBetween(x, x1, x2);
-        const isWithinY = isBetween(y, y1, y2);
+		const isWithinX = isBetween(x, x1, x2);
+		const isWithinY = isBetween(y, y1, y2);
 
 		if (!isWithinX || !isWithinY) {
 			return false;
@@ -110,7 +107,7 @@ export default class LineEntity {
 
 	select(shape: Line) {
 		const coords = shape.nodes.map((node) => ({ x: node.x, y: node.y }));
-        const ctx = this.canvasInteractive.context;
+		const ctx = this.canvasInteractive.context;
 
 		ctx.fillStyle = 'white';
 		ctx.strokeStyle = '#7dd3fc';

@@ -37,7 +37,7 @@ export default class ShapeEntity {
 			case ToolType.LINE:
 				return this.lineEntity.drawShape(shape, canvasType);
 			case ToolType.RECTANGLE:
-				return this.rectangleEntity.drawShape(shape);
+				return this.rectangleEntity.drawShape(shape, canvasType);
 			default:
 				return;
 		}
@@ -82,6 +82,8 @@ export default class ShapeEntity {
 		switch (shape.type) {
 			case ToolType.LINE:
 				return this.lineEntity.updateShape(shape, coordsStart, coordsEnd, node);
+			case ToolType.RECTANGLE:
+				return this.rectangleEntity.updateShape(shape, coordsStart, coordsEnd, node);
 			default:
 				return null;
 		}

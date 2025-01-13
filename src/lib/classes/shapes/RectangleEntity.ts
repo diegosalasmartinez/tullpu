@@ -1,4 +1,11 @@
-import { type Rectangle, type CanvasInstance, type Coords, type Node, ToolType } from '$lib/types';
+import {
+	type Rectangle,
+	type CanvasInstance,
+	type Coords,
+	type Node,
+	CanvasType,
+	ToolType
+} from '$lib/types';
 import { isBetween } from '$lib/utils/selection';
 
 export default class RectangleEntity {
@@ -21,8 +28,13 @@ export default class RectangleEntity {
 		);
 	}
 
-	drawShape(shape: Rectangle) {
-		this.draw(shape.coords, shape.width, shape.height, this.canvasStatic.context);
+	drawShape(shape: Rectangle, canvasType?: CanvasType) {
+		const ctx =
+			!canvasType || canvasType === CanvasType.STATIC
+				? this.canvasStatic.context
+				: this.canvasInteractive.context;
+
+		this.draw(shape.coords, shape.width, shape.height, ctx);
 	}
 
 	private draw(coords: Coords, width: number, height: number, ctx: CanvasRenderingContext2D) {
@@ -117,5 +129,30 @@ export default class RectangleEntity {
 			ctx.stroke();
 			ctx.closePath();
 		}
+	}
+
+	updateShape(shape: Rectangle, coordsStart: Coords, coordsEnd: Coords, node: Node | null) {
+        // TODO: Add support for resizing the shape
+        // Move a side of the shape when click on a line
+        // Move the entire shape when the content is selected
+		const dx = coordsEnd.x - coordsStart.x;
+		const dy = coordsEnd.y - coordsStart.y;
+
+		const start = { x: shape.coords.x + dx, y: shape.coords.y + dy };
+		const end = { x: shape.coords.x + shape.width + dx, y: shape.coords.y + shape.height + dy };
+
+		return this.updateCoords(shape, start, end);
+	}
+
+	updateCoords(shape: Rectangle, coordsStart: Coords, coordsEnd: Coords) {
+		const width = coordsEnd.x - coordsStart.x;
+		const height = coordsEnd.y - coordsStart.y;
+
+		shape.coords = coordsStart;
+		shape.width = width;
+		shape.height = height;
+		shape.nodes = this.createNodes(coordsStart, width, height);
+
+		return shape;
 	}
 }
