@@ -82,6 +82,8 @@ export default class Canvas {
 
 	private handleMouseMove(event: MouseEvent) {
 		console.log('[mouse_move]');
+        this.canvasDrawer.detectHoverInteractiveElements(event);
+
 		if (this.action === ActionType.EDIT) {
 			this.canvasDrawer.editing(event);
 		} else if (this.action === ActionType.DRAW) {

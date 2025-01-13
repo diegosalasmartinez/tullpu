@@ -51,6 +51,19 @@ export default class CanvasDrawer {
 		});
 	}
 
+    detectHoverInteractiveElements(event: MouseEvent) {
+		const coords = this.getMousePosition(event);
+
+		for (const shape of this.canvasStore.getShapes()) {
+			const isSelected = this.shapeEntity.isShapeSelected(shape, coords);
+            if (isSelected) {
+                return this.canvasInteractive.html.style.cursor = 'pointer';
+            }
+		}
+
+        this.canvasInteractive.html.style.cursor = 'default';
+    }
+
 	startDrawing(event: MouseEvent) {
 		// Clear canvas interactive
 		this.clearCanvas(this.canvasInteractive);
