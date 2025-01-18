@@ -193,6 +193,14 @@ export default class CanvasDrawer {
 		}
 	}
 
+	startSelecting() {
+		this.canvasStore.currentShape = null;
+		this.nodeSelected = null;
+
+		// Clear interactive canvas
+		this.clearCanvas(this.canvasInteractive);
+	}
+
 	click(event: MouseEvent) {
 		const entity = this.detectEntity(event);
 		if (!entity) {

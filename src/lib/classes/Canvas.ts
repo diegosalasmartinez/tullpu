@@ -63,49 +63,82 @@ export default class Canvas {
 	}
 
 	private handleMouseDown(event: MouseEvent) {
-		console.log('[mouse_down]');
-		const coords = this.canvasDrawer.getMousePosition(event);
-		this.canvasStore.startPosition = coords;
+		const callback = () => {
+			const coords = this.canvasDrawer.getMousePosition(event);
+			this.canvasStore.startPosition = coords;
 
-		const entity = this.canvasDrawer.detectEntity(event);
+			const entity = this.canvasDrawer.detectEntity(event);
+			if (entity) {
+				this.canvasStore.action = ActionType.EDIT;
+				this.canvasDrawer.startEditing(entity.shape, entity.node);
+				return;
+			}
 
-		if (entity) {
-			this.canvasDrawer.startEditing(entity.shape, entity.node);
-			this.canvasStore.action = ActionType.EDIT;
-		} else {
-			this.canvasDrawer.startDrawing();
+			if (this.canvasStore.tool === ToolType.SELECTION) {
+				this.canvasStore.action = ActionType.SELECTION;
+				this.canvasDrawer.startSelecting();
+				return;
+			}
+
 			this.canvasStore.action = ActionType.DRAW;
-		}
+			this.canvasDrawer.startDrawing();
+		};
+
+		callback();
+		console.log('[mouse_down] action:', this.canvasStore.action);
 	}
 
 	private handleMouseMove(event: MouseEvent) {
-		console.log('[mouse_move] action:', this.canvasStore.action);
-		this.canvasDrawer.detectHoverInteractiveElements(event);
+		const callback = () => {
+			this.canvasDrawer.detectHoverInteractiveElements(event);
 
-		if (this.canvasStore.action === ActionType.EDIT) {
-			this.canvasDrawer.editing(event);
-		} else if (this.canvasStore.action === ActionType.DRAW) {
-			this.canvasDrawer.drawing(event);
-		}
+			if (this.canvasStore.action === ActionType.EDIT) {
+				this.canvasDrawer.editing(event);
+				return;
+			}
+
+			if (this.canvasStore.action === ActionType.SELECTION) {
+				// TODO: Implement selection
+				return;
+			}
+
+			if (this.canvasStore.action === ActionType.DRAW) {
+				this.canvasDrawer.drawing(event);
+				return;
+			}
+		};
+
+		callback();
+		console.log('[mouse_move] action:', this.canvasStore.action);
 	}
 
 	private handleMouseUp(event: MouseEvent) {
+		const callback = () => {
+			if (this.canvasStore.action === ActionType.EDIT) {
+				this.canvasDrawer.stopEditing(event);
+			}
+
+			if (this.canvasStore.action === ActionType.DRAW) {
+				this.canvasDrawer.stopDrawing(event);
+			}
+
+			this.canvasStore.action = ActionType.IDLE;
+			this.canvasStore.tool = ToolType.SELECTION;
+		};
+
+		callback();
 		console.log('[mouse_up] action:', this.canvasStore.action);
-
-		if (this.canvasStore.action === ActionType.EDIT) {
-			this.canvasDrawer.stopEditing(event);
-		} else if (this.canvasStore.action === ActionType.DRAW) {
-			this.canvasDrawer.stopDrawing(event);
-		}
-
-		this.canvasStore.action = ActionType.IDLE;
 	}
 
 	private handleClick(event: MouseEvent) {
-		console.log('[mouse_click]');
-		if (this.canvasStore.tool !== ToolType.SELECTION) return;
+		const callback = () => {
+			if (this.canvasStore.tool !== ToolType.SELECTION) return;
 
-		this.canvasDrawer.click(event);
+			this.canvasDrawer.click(event);
+		};
+
+        callback();
+		console.log('[mouse_click] click:', this.canvasStore.tool);
 	}
 
 	private handleWheel(event: WheelEvent) {

@@ -1,7 +1,8 @@
 export enum ActionType {
 	IDLE = 'IDLE',
 	DRAW = 'DRAW',
-	EDIT = 'EDIT'
+	EDIT = 'EDIT',
+	SELECTION = 'SELECTION',
 }
 
 export enum ToolType {
