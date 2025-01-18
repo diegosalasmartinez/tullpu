@@ -32,7 +32,7 @@ export default class CanvasDrawer {
 			//this.canvasStatic.context.fillRect(-10000, -10000, 20000, 20000);
 
 			// Draw shapes
-			for (const shape of this.canvasStore.getShapes()) {
+			for (const shape of this.canvasStore.shapes) {
 				this.shapeEntity.drawShape(shape);
 			}
 		});
@@ -44,7 +44,7 @@ export default class CanvasDrawer {
 
 		this.drawCanvasCallback(this.canvasInteractive, () => {
 			// Draw current shape
-			const currentShape = this.canvasStore.getCurrentShape();
+			const currentShape = this.canvasStore.currentShape;
 			if (currentShape) {
 				this.shapeEntity.selectShape(currentShape);
 			}
@@ -52,19 +52,24 @@ export default class CanvasDrawer {
 	}
 
 	detectHoverInteractiveElements(event: MouseEvent) {
-		const coords = this.getMousePosition(event);
-
-		for (const shape of this.canvasStore.getShapes()) {
-			const isSelected = this.shapeEntity.isShapeSelected(shape, coords);
-			if (isSelected) {
-				return (this.canvasInteractive.html.style.cursor = 'pointer');
+		const entity = this.detectEntity(event);
+		if (entity) {
+			// If there isn't a selected shape, show the cursor as move
+			if (!this.canvasStore.currentShape) {
+				this.canvasInteractive.html.style.cursor = 'move';
+				return;
 			}
+
+			const coords = this.getMousePosition(event);
+			const cursorStyle = this.shapeEntity.getCursorStyleOnHover(entity.shape, coords, entity.node);
+			this.canvasInteractive.html.style.cursor = cursorStyle;
+			return;
 		}
 
 		this.canvasInteractive.html.style.cursor = 'default';
 	}
 
-	startDrawing(event: MouseEvent) {
+	startDrawing() {
 		// Clear canvas interactive
 		this.clearCanvas(this.canvasInteractive);
 	}
@@ -76,7 +81,7 @@ export default class CanvasDrawer {
 		this.drawCanvasCallback(this.canvasInteractive, () => {
 			// Draw shape to interactive canvas
 			const coordsMouse = this.getMousePosition(event);
-			const coordsStart = this.canvasStore.getStartPosition();
+			const coordsStart = this.canvasStore.startPosition;
 
 			this.shapeEntity.drawCoords(coordsStart, coordsMouse);
 		});
@@ -84,7 +89,7 @@ export default class CanvasDrawer {
 
 	stopDrawing(event: MouseEvent) {
 		const coordsMouse = this.getMousePosition(event);
-		const coordsStart = this.canvasStore.getStartPosition();
+		const coordsStart = this.canvasStore.startPosition;
 
 		// Validate it's not the same point
 		if (this.validateIsSamePoint(coordsStart, coordsMouse)) return;
@@ -104,11 +109,9 @@ export default class CanvasDrawer {
 		});
 	}
 
-	startEditing(event: MouseEvent, shape: Shape) {
-		const coords = this.getMousePosition(event);
-
-		this.canvasStore.setCurrentShape(shape);
-		this.nodeSelected = this.shapeEntity.getNodeSelected(shape, coords);
+	startEditing(shape: Shape, node: Node | null) {
+		this.canvasStore.currentShape = shape;
+		this.nodeSelected = node;
 
 		// Remove shape from local storage
 		// It will be added again when the user finishes editing
@@ -124,36 +127,36 @@ export default class CanvasDrawer {
 	}
 
 	editing(event: MouseEvent) {
-		const shapeSelected = this.canvasStore.getCurrentShape();
-		if (!shapeSelected) return;
+		const currentShape = this.canvasStore.currentShape;
+		if (!currentShape) return;
 
 		// Clear interactive canvas
 		this.clearCanvas(this.canvasInteractive);
 
 		this.drawCanvasCallback(this.canvasInteractive, () => {
 			// Draw shape to interactive canvas
-			const coordsStartPosition = this.canvasStore.getStartPosition();
+			const coordsStartPosition = this.canvasStore.startPosition;
 			const coordsMouse = this.getMousePosition(event);
 
-			const shapeUpdated = this.shapeEntity.updateShape(
-				shapeSelected,
+			const updatedShape = this.shapeEntity.updateShape(
+				currentShape,
 				coordsStartPosition,
 				coordsMouse,
 				this.nodeSelected
 			);
-			if (!shapeUpdated) return;
+			if (!updatedShape) return;
 
 			// Draw new coords
-			this.shapeEntity.drawShape(shapeUpdated, CanvasType.INTERACTIVE);
-			this.shapeEntity.selectShape(shapeSelected);
+			this.shapeEntity.drawShape(updatedShape, CanvasType.INTERACTIVE);
+			this.shapeEntity.selectShape(currentShape);
 		});
 	}
 
 	stopEditing(event: MouseEvent) {
-		const shapeSelected = this.canvasStore.getCurrentShape();
-		if (!shapeSelected) return;
+		const currentShape = this.canvasStore.currentShape;
+		if (!currentShape) return;
 
-		const coordsStartPosition = this.canvasStore.getStartPosition();
+		const coordsStartPosition = this.canvasStore.startPosition;
 		const coordsMouse = this.getMousePosition(event);
 
 		// Clear interactive canvas
@@ -162,38 +165,38 @@ export default class CanvasDrawer {
 		// Validate it's not the same point
 		if (this.validateIsSamePoint(coordsStartPosition, coordsMouse)) {
 			// Add shape to local storage
-			this.canvasStore.addShape(shapeSelected);
+			this.canvasStore.addShape(currentShape);
 
 			this.drawCanvasCallback(this.canvasStatic, () => {
 				// Draw shape to static canvas
-				this.shapeEntity.drawShape(shapeSelected);
+				this.shapeEntity.drawShape(currentShape);
 			});
 		} else {
-			const shapeUpdated = this.shapeEntity.updateShape(
-				shapeSelected,
+			const updatedShape = this.shapeEntity.updateShape(
+				currentShape,
 				coordsStartPosition,
 				coordsMouse,
 				this.nodeSelected
 			);
-			if (!shapeUpdated) return;
+			if (!updatedShape) return;
 
 			// Add shape to local storage
-			this.canvasStore.addShape(shapeUpdated);
+			this.canvasStore.addShape(updatedShape);
 
 			// Set current shape
-			this.canvasStore.setCurrentShape(shapeUpdated);
+			this.canvasStore.currentShape = updatedShape;
 
 			this.drawCanvasCallback(this.canvasStatic, () => {
 				// Draw shape to static canvas
-				this.shapeEntity.drawShape(shapeUpdated);
+				this.shapeEntity.drawShape(updatedShape);
 			});
 		}
 	}
 
 	click(event: MouseEvent) {
-		const shapeSelected = this.hasSelectedShape(event);
-		if (!shapeSelected) {
-			return this.canvasStore.setCurrentShape(null);
+		const entity = this.detectEntity(event);
+		if (!entity) {
+			return this.canvasStore.currentShape = null;
 		}
 
 		// Clear interactive canvas
@@ -201,27 +204,29 @@ export default class CanvasDrawer {
 
 		this.drawCanvasCallback(this.canvasInteractive, () => {
 			// Print selected shape
-			this.canvasStore.setCurrentShape(shapeSelected);
-			this.shapeEntity.selectShape(shapeSelected);
+			this.canvasStore.currentShape = entity.shape;
+			this.shapeEntity.selectShape(entity.shape);
 		});
 	}
 
-	hasSelectedShape(event: MouseEvent) {
+	detectEntity(event: MouseEvent) {
 		const coords = this.getMousePosition(event);
 
-		for (const shape of this.canvasStore.getShapes()) {
-			const isSelected = this.shapeEntity.isShapeSelected(shape, coords);
+		for (const shape of this.canvasStore.shapes) {
+			const isSelected = this.shapeEntity.isShapeDetected(shape, coords);
 			if (isSelected) {
-				return shape;
+				const node = this.shapeEntity.getNodeSelected(shape, coords);
+				return { shape, node };
 			}
 		}
 
-		const currentShape = this.canvasStore.getCurrentShape();
+		const currentShape = this.canvasStore.currentShape;
 		if (!currentShape) return null;
 
-		const isContentSelected = this.shapeEntity.isShapeContentSelected(currentShape, coords);
+		const isContentSelected = this.shapeEntity.isShapeContentDetected(currentShape, coords);
 		if (isContentSelected) {
-			return currentShape;
+			const node = this.shapeEntity.getNodeSelected(currentShape, coords);
+			return { shape: currentShape, node };
 		}
 
 		return null;
@@ -235,7 +240,7 @@ export default class CanvasDrawer {
 	getMousePosition(event: MouseEvent): Coords {
 		const canvasRect = this.canvasStatic.html.getBoundingClientRect();
 
-		const { x: offsetX, y: offsetY } = this.canvasStore.getOffset();
+		const { x: offsetX, y: offsetY } = this.canvasStore.offset;
 		const currentX = event.clientX - canvasRect.left - offsetX;
 		const currentY = event.clientY - canvasRect.top - offsetY;
 
@@ -245,7 +250,7 @@ export default class CanvasDrawer {
 	private drawCanvasCallback(canvas: CanvasInstance, callback: () => void) {
 		// Apply translation
 		canvas.context.save();
-		const { x: offsetX, y: offsetY } = this.canvasStore.getOffset();
+		const { x: offsetX, y: offsetY } = this.canvasStore.offset;
 		canvas.context.translate(offsetX, offsetY);
 
 		// Custom callback

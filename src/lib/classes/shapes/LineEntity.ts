@@ -70,7 +70,7 @@ export default class LineEntity {
 		return [startNode, endNode];
 	}
 
-	isClicked(shape: Line, coords: Coords) {
+	isShapeDetected(shape: Line, coords: Coords) {
 		const { x, y } = coords;
 
 		const { x: x1, y: y1 } = shape.coordsStart;
@@ -151,5 +151,14 @@ export default class LineEntity {
 		shape.nodes = this.createNodes(coordsStart, coordsEnd);
 
 		return shape;
+	}
+
+	getCursorStyleOnHover(shape: Line, coords: Coords, node: Node | null) {
+        // TODO: Implement this
+        if (node) {
+            return 'pointer';
+        }
+
+		return 'move';
 	}
 }

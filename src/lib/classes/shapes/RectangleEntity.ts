@@ -87,7 +87,7 @@ export default class RectangleEntity {
 		return [node1, node2, node3, node4];
 	}
 
-	isClicked(shape: Rectangle, coords: Coords) {
+	isShapeDetected(shape: Rectangle, coords: Coords) {
 		const { x, y } = coords;
 
 		const node1 = shape.nodes[0];
@@ -110,7 +110,7 @@ export default class RectangleEntity {
 		return false;
 	}
 
-	isContentClicked(shape: Rectangle, coords: Coords) {
+	isContentDetected(shape: Rectangle, coords: Coords) {
 		const { x, y } = coords;
 		const { nodes } = shape;
 
@@ -145,13 +145,18 @@ export default class RectangleEntity {
 		// TODO: Add support for resizing the shape
 		// Move a side of the shape when click on a line
 		// Move the entire shape when the content is selected
-		const dx = coordsEnd.x - coordsStart.x;
-		const dy = coordsEnd.y - coordsStart.y;
 
-		const start = { x: shape.coords.x + dx, y: shape.coords.y + dy };
-		const end = { x: shape.coords.x + shape.width + dx, y: shape.coords.y + shape.height + dy };
+		if (!node) {
+			const dx = coordsEnd.x - coordsStart.x;
+			const dy = coordsEnd.y - coordsStart.y;
 
-		return this.updateCoords(shape, start, end);
+			const start = { x: shape.coords.x + dx, y: shape.coords.y + dy };
+			const end = { x: shape.coords.x + shape.width + dx, y: shape.coords.y + shape.height + dy };
+
+			return this.updateCoords(shape, start, end);
+		}
+
+		return shape;
 	}
 
 	updateCoords(shape: Rectangle, coordsStart: Coords, coordsEnd: Coords) {
@@ -164,5 +169,13 @@ export default class RectangleEntity {
 		shape.nodes = this.createNodes(coordsStart, width, height);
 
 		return shape;
+	}
+
+	getCursorStyleOnHover(shape: Rectangle, coords: Coords, node: Node | null) {
+		if (node) {
+			return 'ne-resize';
+		}
+
+		return 'move';
 	}
 }

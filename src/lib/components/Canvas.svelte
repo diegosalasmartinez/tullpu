@@ -18,10 +18,11 @@
 	});
 </script>
 
-<canvas bind:this={canvasStatic} class="canvas canvas-static"></canvas>
 <div>
-	<canvas bind:this={canvasInteractive} class="canvas canvas-interactive"> </canvas>
+	<canvas bind:this={canvasStatic} class="canvas canvas-static pointer-events-none z-[1]"></canvas>
 </div>
+
+<canvas bind:this={canvasInteractive} class="canvas canvas-interactive z-[2]"></canvas>
 
 <style lang="postcss">
 	.canvas {

@@ -14,7 +14,7 @@ import LineEntity from '$lib/classes/shapes/LineEntity';
 export default class ShapeEntity {
 	private lineEntity: LineEntity;
 	private rectangleEntity: RectangleEntity;
-	private proximityRadius: number = 5;
+	private proximityRadius: number = 7;
 
 	constructor(canvasStatic: CanvasInstance, canvasInteractive: CanvasInstance) {
 		this.lineEntity = new LineEntity(canvasStatic, canvasInteractive);
@@ -56,28 +56,27 @@ export default class ShapeEntity {
 		return null;
 	}
 
-	isShapeSelected(shape: Shape, coords: Coords) {
+	isShapeDetected(shape: Shape, coords: Coords) {
 		switch (shape.type) {
 			case ToolType.LINE:
-				return this.lineEntity.isClicked(shape, coords);
+				return this.lineEntity.isShapeDetected(shape, coords);
 			case ToolType.RECTANGLE:
-				return this.rectangleEntity.isClicked(shape, coords);
+				return this.rectangleEntity.isShapeDetected(shape, coords);
 			default:
 				return false;
 		}
 	}
 
-    isShapeContentSelected(shape: Shape, coords: Coords) {
+	isShapeContentDetected(shape: Shape, coords: Coords) {
 		switch (shape.type) {
 			case ToolType.LINE:
 				return null;
 			case ToolType.RECTANGLE:
-				return this.rectangleEntity.isContentClicked(shape, coords);
+				return this.rectangleEntity.isContentDetected(shape, coords);
 			default:
 				return false;
 		}
-
-    }
+	}
 
 	selectShape(shape: Shape) {
 		switch (shape.type) {
@@ -98,6 +97,17 @@ export default class ShapeEntity {
 				return this.rectangleEntity.updateShape(shape, coordsStart, coordsEnd, node);
 			default:
 				return null;
+		}
+	}
+
+	getCursorStyleOnHover(shape: Shape, coords: Coords, node: Node | null) {
+		switch (shape.type) {
+			case ToolType.LINE:
+				return this.lineEntity.getCursorStyleOnHover(shape, coords, node);
+			case ToolType.RECTANGLE:
+				return this.rectangleEntity.getCursorStyleOnHover(shape, coords, node);
+			default:
+				return 'move';
 		}
 	}
 

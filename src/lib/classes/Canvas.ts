@@ -9,8 +9,6 @@ export default class Canvas {
 	private canvasStore: CanvasStore;
 	private canvasDrawer: CanvasDrawer;
 
-	private action: ActionType = ActionType.IDLE;
-
 	// Listener references
 	private resizeListener: () => void;
 	private wheelListener: (event: WheelEvent) => void;
@@ -48,7 +46,7 @@ export default class Canvas {
 
 	private initEventListeners() {
 		window.addEventListener('resize', this.resizeListener);
-		this.canvasInteractive.html.addEventListener('wheel', this.wheelListener);
+		this.canvasInteractive.html.addEventListener('wheel', this.wheelListener, { passive: false });
 		this.canvasInteractive.html.addEventListener('mousedown', this.mouseDownListener);
 		this.canvasInteractive.html.addEventListener('mousemove', this.mouseMoveListener);
 		this.canvasInteractive.html.addEventListener('mouseup', this.mouseUpListener);
@@ -67,44 +65,45 @@ export default class Canvas {
 	private handleMouseDown(event: MouseEvent) {
 		console.log('[mouse_down]');
 		const coords = this.canvasDrawer.getMousePosition(event);
-		this.canvasStore.setStartPosition(coords);
+		this.canvasStore.startPosition = coords;
 
-		const shapeSelected = this.canvasDrawer.hasSelectedShape(event);
+		const entity = this.canvasDrawer.detectEntity(event);
 
-		if (shapeSelected) {
-			this.canvasDrawer.startEditing(event, shapeSelected);
-			this.action = ActionType.EDIT;
+		if (entity) {
+			this.canvasDrawer.startEditing(entity.shape, entity.node);
+			this.canvasStore.action = ActionType.EDIT;
 		} else {
-            this.canvasDrawer.startDrawing(event);
-			this.action = ActionType.DRAW;
+			this.canvasDrawer.startDrawing();
+			this.canvasStore.action = ActionType.DRAW;
 		}
 	}
 
 	private handleMouseMove(event: MouseEvent) {
-		console.log('[mouse_move]');
-        this.canvasDrawer.detectHoverInteractiveElements(event);
+		console.log('[mouse_move] action:', this.canvasStore.action);
+		this.canvasDrawer.detectHoverInteractiveElements(event);
 
-		if (this.action === ActionType.EDIT) {
+		if (this.canvasStore.action === ActionType.EDIT) {
 			this.canvasDrawer.editing(event);
-		} else if (this.action === ActionType.DRAW) {
+		} else if (this.canvasStore.action === ActionType.DRAW) {
 			this.canvasDrawer.drawing(event);
 		}
 	}
 
 	private handleMouseUp(event: MouseEvent) {
-		console.log('[mouse_up] action:', this.action);
-		if (this.action === ActionType.EDIT) {
+		console.log('[mouse_up] action:', this.canvasStore.action);
+
+		if (this.canvasStore.action === ActionType.EDIT) {
 			this.canvasDrawer.stopEditing(event);
-		} else if (this.action === ActionType.DRAW) {
+		} else if (this.canvasStore.action === ActionType.DRAW) {
 			this.canvasDrawer.stopDrawing(event);
 		}
 
-		this.action = ActionType.IDLE;
+		this.canvasStore.action = ActionType.IDLE;
 	}
 
 	private handleClick(event: MouseEvent) {
 		console.log('[mouse_click]');
-		if (this.canvasStore.getCurrentTool() !== ToolType.SELECTION) return;
+		if (this.canvasStore.tool !== ToolType.SELECTION) return;
 
 		this.canvasDrawer.click(event);
 	}
@@ -112,8 +111,8 @@ export default class Canvas {
 	private handleWheel(event: WheelEvent) {
 		event.preventDefault();
 
-		const { x: offsetX, y: offsetY } = this.canvasStore.getOffset();
-		this.canvasStore.setOffset({ x: offsetX - event.deltaX, y: offsetY - event.deltaY });
+		const { x: offsetX, y: offsetY } = this.canvasStore.offset;
+		this.canvasStore.offset = { x: offsetX - event.deltaX, y: offsetY - event.deltaY };
 
 		this.canvasDrawer.drawCanvasStatic();
 		this.canvasDrawer.drawCanvasInteractive();

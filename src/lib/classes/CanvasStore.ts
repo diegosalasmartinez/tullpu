@@ -1,88 +1,100 @@
-import { ToolType, type Shape, type Coords } from '$lib/types';
-import { currentTool } from '$lib/stores/ToolStore';
-import { currentShape } from '$lib/stores/ShapeStore';
+import { ToolType, ActionType, type Shape, type Coords } from '$lib/types';
 import { currentOffset, currentStartPosition } from '$lib/stores/CoordsStore';
+import { currentTool, currentAction } from '$lib/stores/ToolStore';
+import { currentShape } from '$lib/stores/ShapeStore';
 
 export default class CanvasStore {
-	private shapes: Shape[] = [];
+	private _shapes: Shape[] = [];
 
-	private tool: ToolType = ToolType.SELECTION;
-	private shape: Shape | null = null;
-	private offset: Coords = { x: 0, y: 0 };
-	private startPosition: Coords = { x: 0, y: 0 };
+	private _action: ActionType = ActionType.IDLE;
+	private _tool: ToolType = ToolType.SELECTION;
+	private _shape: Shape | null = null;
+	private _offset: Coords = { x: 0, y: 0 };
+	private _startPosition: Coords = { x: 0, y: 0 };
 
 	constructor() {
 		this.loadShapes();
 
 		// Subscribe to stores
+		currentAction.subscribe((action) => {
+			this._action = action;
+		});
 		currentTool.subscribe((tool) => {
-			this.tool = tool;
+			this._tool = tool;
 		});
 		currentShape.subscribe((shape) => {
-			this.shape = shape;
+			this._shape = shape;
 		});
 		currentOffset.subscribe((offset) => {
-			this.offset = offset;
+			this._offset = offset;
 		});
 		currentStartPosition.subscribe((position) => {
-			this.startPosition = position;
+			this._startPosition = position;
 		});
 	}
 
 	private loadShapes() {
-		const shapesString = this.loadFromLocalStorage('shapes');
+		const shapesString = this.loadFromLocalStorage('_shapes');
 		if (shapesString) {
-			this.shapes = JSON.parse(shapesString);
+			this._shapes = JSON.parse(shapesString);
 		}
 	}
 
-	getShapes() {
-		return this.shapes;
+	get shapes() {
+		return this._shapes;
 	}
 
-	addShape(shape: Shape) {
-		this.shapes.push(shape);
-		this.saveToLocalStorage('shapes', JSON.stringify(this.shapes));
+	addShape(_shape: Shape) {
+		this._shapes.push(_shape);
+		this.saveToLocalStorage('_shapes', JSON.stringify(this._shapes));
 	}
 
-	removeShape(shape: Shape) {
-		this.shapes = this.shapes.filter((s) => s.id !== shape.id);
-		this.saveToLocalStorage('shapes', JSON.stringify(this.shapes));
+	removeShape(_shape: Shape) {
+		this._shapes = this._shapes.filter((s) => s.id !== _shape.id);
+		this.saveToLocalStorage('_shapes', JSON.stringify(this._shapes));
 	}
 
-	getCurrentTool() {
-		return this.tool;
+	get action() {
+		return this._action;
 	}
 
-	setCurrentTool(tool: ToolType) {
-		currentTool.set(tool);
+	set action(_action: ActionType) {
+		currentAction.set(_action);
 	}
 
-	getCurrentShape() {
-        if (!this.shape) return null;
-
-        // Prevent direct access to the shape object
-		const shapeCopy: Shape = { ...this.shape };
-        return shapeCopy
+	get tool() {
+		return this._tool;
 	}
 
-	setCurrentShape(shape: Shape | null) {
-		currentShape.set(shape);
+	set tool(_tool: ToolType) {
+		currentTool.set(_tool);
 	}
 
-	getOffset() {
-		return this.offset;
+	get currentShape() {
+		if (!this._shape) return null;
+
+		// Prevent direct access to the _shape object
+		const shapeCopy: Shape = { ...this._shape };
+		return shapeCopy;
 	}
 
-	setOffset(offset: Coords) {
-		currentOffset.set(offset);
+	set currentShape(_shape: Shape | null) {
+		currentShape.set(_shape);
 	}
 
-	getStartPosition() {
-		return this.startPosition;
+	get offset() {
+		return this._offset;
 	}
 
-	setStartPosition(position: Coords) {
+	set offset(_offset: Coords) {
+		currentOffset.set(_offset);
+	}
+
+	get startPosition() {
+		return this._startPosition;
+	}
+
+	set startPosition(position: Coords) {
 		currentStartPosition.set(position);
 	}
 
