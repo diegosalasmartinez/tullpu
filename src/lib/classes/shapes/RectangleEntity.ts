@@ -110,6 +110,16 @@ export default class RectangleEntity {
 		return false;
 	}
 
+	isContentClicked(shape: Rectangle, coords: Coords) {
+		const { x, y } = coords;
+		const { nodes } = shape;
+
+		const isBetweenX = isBetween(x, nodes[0].x, nodes[2].x);
+		const isBetweenY = isBetween(y, nodes[0].y, nodes[2].y);
+
+		return isBetweenX && isBetweenY;
+	}
+
 	select(shape: Rectangle) {
 		const coords = shape.nodes.map((node) => ({ x: node.x, y: node.y }));
 		const ctx = this.canvasInteractive.context;
@@ -132,9 +142,9 @@ export default class RectangleEntity {
 	}
 
 	updateShape(shape: Rectangle, coordsStart: Coords, coordsEnd: Coords, node: Node | null) {
-        // TODO: Add support for resizing the shape
-        // Move a side of the shape when click on a line
-        // Move the entire shape when the content is selected
+		// TODO: Add support for resizing the shape
+		// Move a side of the shape when click on a line
+		// Move the entire shape when the content is selected
 		const dx = coordsEnd.x - coordsStart.x;
 		const dy = coordsEnd.y - coordsStart.y;
 

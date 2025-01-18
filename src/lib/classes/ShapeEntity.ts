@@ -67,6 +67,18 @@ export default class ShapeEntity {
 		}
 	}
 
+    isShapeContentSelected(shape: Shape, coords: Coords) {
+		switch (shape.type) {
+			case ToolType.LINE:
+				return null;
+			case ToolType.RECTANGLE:
+				return this.rectangleEntity.isContentClicked(shape, coords);
+			default:
+				return false;
+		}
+
+    }
+
 	selectShape(shape: Shape) {
 		switch (shape.type) {
 			case ToolType.LINE:
