@@ -1,4 +1,12 @@
-import { type Line, type CanvasInstance, type Node, type Coords, ToolType } from '$lib/types';
+import { type Line, type CanvasInstance, type Coords, ToolType, DEFAULT_STYLE } from '$lib/types';
+import {
+	SELECTION_COLOR,
+	SELECTION_HANDLE_RADIUS,
+	SELECTION_HANDLE_STROKE_WIDTH,
+	LINE_HIT_DISTANCE
+} from '$lib/constants';
+
+export type LineNode = { id: 'start' | 'end'; x: number; y: number };
 
 export default class LineEntity {
 	private canvasStatic: CanvasInstance;
@@ -10,58 +18,67 @@ export default class LineEntity {
 	}
 
 	drawCoords(coordsStart: Coords, coordsEnd: Coords) {
-		this.draw(coordsStart, coordsEnd, this.canvasInteractive.context);
+		this.draw(coordsStart, coordsEnd, '#000000', 1, this.canvasInteractive.context);
 	}
 
 	drawShape(shape: Line) {
-		this.draw(shape.coordsStart, shape.coordsEnd, this.canvasStatic.context);
+		this.draw(
+			shape.start,
+			shape.end,
+			shape.style.stroke,
+			shape.style.strokeWidth,
+			this.canvasStatic.context
+		);
 	}
 
-	private draw(coordsStart: Coords, coordsEnd: Coords, ctx: CanvasRenderingContext2D) {
+	private draw(
+		coordsStart: Coords,
+		coordsEnd: Coords,
+		stroke: string,
+		lineWidth: number,
+		ctx: CanvasRenderingContext2D
+	) {
 		const { x: x1, y: y1 } = coordsStart;
 		const { x: x2, y: y2 } = coordsEnd;
 
-		ctx.strokeStyle = 'black';
-		ctx.lineWidth = 1;
+		ctx.strokeStyle = stroke;
+		ctx.lineWidth = lineWidth;
 		ctx.beginPath();
 		ctx.moveTo(x1, y1);
 		ctx.lineTo(x2, y2);
 		ctx.stroke();
 	}
 
-	createShape(coordsStart: Coords, coordsEnd: Coords) {
-		const shape: Line = {
+	createShape(coordsStart: Coords, coordsEnd: Coords): Line {
+		return {
 			id: crypto.randomUUID(),
 			type: ToolType.LINE,
-			coordsStart,
-			coordsEnd,
-			nodes: this.createNodes(coordsStart, coordsEnd)
+			style: { ...DEFAULT_STYLE },
+			start: coordsStart,
+			end: coordsEnd
 		};
-
-		return shape;
 	}
 
-	private createNodes(coordsStart: Coords, coordsEnd: Coords) {
-		const startNode: Node = {
-			id: crypto.randomUUID(),
-			x: coordsStart.x,
-			y: coordsStart.y
-		};
+	getNodes(shape: Line): LineNode[] {
+		return [
+			{ id: 'start', x: shape.start.x, y: shape.start.y },
+			{ id: 'end', x: shape.end.x, y: shape.end.y }
+		];
+	}
 
-		const endNode: Node = {
-			id: crypto.randomUUID(),
-			x: coordsEnd.x,
-			y: coordsEnd.y
-		};
-
-		return [startNode, endNode];
+	updateFromNode(shape: Line, nodeId: string, x: number, y: number) {
+		if (nodeId === 'start') {
+			shape.start = { x, y };
+		} else {
+			shape.end = { x, y };
+		}
 	}
 
 	isClicked(shape: Line, x: number, y: number) {
-		const { x: x1, y: y1 } = shape.coordsStart;
-		const { x: x2, y: y2 } = shape.coordsEnd;
+		const { x: x1, y: y1 } = shape.start;
+		const { x: x2, y: y2 } = shape.end;
 
-		const minDistance = 7;
+		const minDistance = LINE_HIT_DISTANCE;
 
 		const minX = Math.min(x1, x2);
 		const maxX = Math.max(x1, x2);
@@ -90,22 +107,32 @@ export default class LineEntity {
 		const denominator = Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2));
 		const distance = numerator / denominator;
 
-		if (distance > minDistance) {
-			return false;
-		}
-
-		return true;
+		return distance <= minDistance;
 	}
 
 	select(shape: Line) {
-		this.canvasInteractive.context.fillStyle = 'purple';
+		const ctx = this.canvasInteractive.context;
 
-		// Draw circle at the start and end of the line
-		for (const node of shape.nodes) {
-			this.canvasInteractive.context.beginPath();
-			this.canvasInteractive.context.arc(node.x, node.y, 5, 0, Math.PI * 2);
-			this.canvasInteractive.context.fill();
-			this.canvasInteractive.context.closePath();
+		// Selection highlight along the line
+		ctx.beginPath();
+		ctx.moveTo(shape.start.x, shape.start.y);
+		ctx.lineTo(shape.end.x, shape.end.y);
+		ctx.strokeStyle = SELECTION_COLOR;
+		ctx.lineWidth = 1;
+		ctx.setLineDash([4, 3]);
+		ctx.stroke();
+		ctx.setLineDash([]);
+
+		// Handles
+		for (const node of this.getNodes(shape)) {
+			ctx.beginPath();
+			ctx.arc(node.x, node.y, SELECTION_HANDLE_RADIUS, 0, Math.PI * 2);
+			ctx.fillStyle = '#ffffff';
+			ctx.fill();
+			ctx.strokeStyle = SELECTION_COLOR;
+			ctx.lineWidth = SELECTION_HANDLE_STROKE_WIDTH;
+			ctx.stroke();
+			ctx.closePath();
 		}
 	}
 }
