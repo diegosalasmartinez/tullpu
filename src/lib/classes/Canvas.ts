@@ -18,6 +18,7 @@ export default class Canvas {
 	private mouseDownListener: (event: MouseEvent) => void;
 	private mouseMoveListener: (event: MouseEvent) => void;
 	private mouseUpListener: (event: MouseEvent) => void;
+	private keyDownListener: (event: KeyboardEvent) => void;
 
 	constructor(canvasStatic: HTMLCanvasElement, canvasInteractive: HTMLCanvasElement) {
 		const canvasStaticCtx = canvasStatic.getContext('2d');
@@ -42,12 +43,14 @@ export default class Canvas {
 		this.mouseMoveListener = this.handleMouseMove.bind(this);
 		this.mouseUpListener = this.handleMouseUp.bind(this);
 		this.clickListener = this.handleClick.bind(this);
+		this.keyDownListener = this.handleKeyDown.bind(this);
 
 		this.initEventListeners();
 	}
 
 	private initEventListeners() {
 		window.addEventListener('resize', this.resizeListener);
+		window.addEventListener('keydown', this.keyDownListener);
 		this.canvasInteractive.html.addEventListener('wheel', this.wheelListener);
 		this.canvasInteractive.html.addEventListener('mousedown', this.mouseDownListener);
 		this.canvasInteractive.html.addEventListener('mousemove', this.mouseMoveListener);
@@ -57,6 +60,7 @@ export default class Canvas {
 
 	destroy() {
 		window.removeEventListener('resize', this.resizeListener);
+		window.removeEventListener('keydown', this.keyDownListener);
 		this.canvasInteractive.html.removeEventListener('wheel', this.wheelListener);
 		this.canvasInteractive.html.removeEventListener('mousedown', this.mouseDownListener);
 		this.canvasInteractive.html.removeEventListener('mousemove', this.mouseMoveListener);
@@ -68,13 +72,17 @@ export default class Canvas {
 		const { x, y } = this.canvasDrawer.getMousePosition(event);
 		this.canvasStore.setStartPosition({ x, y });
 
-		const shapeSelected = this.canvasDrawer.hasSelectedShape(event);
-		if (shapeSelected) {
-			this.canvasDrawer.startEditing(event, shapeSelected);
-			this.action = ActionType.EDIT;
-		} else {
-			this.action = ActionType.DRAW;
+		// Only enter edit mode when the selection tool is active
+		if (this.canvasStore.getCurrentTool() === ToolType.SELECTION) {
+			const shapeSelected = this.canvasDrawer.hasSelectedShape(event);
+			if (shapeSelected) {
+				this.canvasDrawer.startEditing(event, shapeSelected);
+				this.action = ActionType.EDIT;
+				return;
+			}
 		}
+
+		this.action = ActionType.DRAW;
 	}
 
 	private handleMouseMove(event: MouseEvent) {
@@ -82,17 +90,25 @@ export default class Canvas {
 			this.canvasDrawer.editing(event);
 		} else if (this.action === ActionType.DRAW) {
 			this.canvasDrawer.drawing(event);
+		} else {
+			this.canvasDrawer.updateCursor(event);
 		}
 	}
 
 	private handleMouseUp(event: MouseEvent) {
 		if (this.action === ActionType.EDIT) {
-			// TODO: Finish editing shape
+			this.canvasDrawer.stopEditing();
 		} else if (this.action === ActionType.DRAW) {
 			this.canvasDrawer.stopDrawing(event);
 		}
 
 		this.action = ActionType.IDLE;
+	}
+
+	private handleKeyDown(event: KeyboardEvent) {
+		if (event.key !== 'Delete' && event.key !== 'Backspace') return;
+		if (this.canvasStore.getCurrentTool() !== ToolType.SELECTION) return;
+		this.canvasDrawer.deleteSelectedShape();
 	}
 
 	private handleClick(event: MouseEvent) {
@@ -111,12 +127,21 @@ export default class Canvas {
 		this.canvasDrawer.drawCanvasInteractive();
 	}
 
-	resizeCanvas() {
-		// Config scale for high resolution
-		const { innerWidth, innerHeight, devicePixelRatio } = window;
+	redrawAll() {
+		this.canvasDrawer.drawCanvasStatic();
+		this.canvasDrawer.drawCanvasInteractive();
+	}
 
-		const canvasWidth = innerWidth * devicePixelRatio;
-		const canvasHeight = innerHeight * devicePixelRatio;
+	cancelEditing() {
+		this.canvasDrawer.cancelEditing();
+		this.action = ActionType.IDLE;
+	}
+
+	resizeCanvas() {
+		const { innerWidth, innerHeight, devicePixelRatio: dpr } = window;
+
+		const canvasWidth = innerWidth * dpr;
+		const canvasHeight = innerHeight * dpr;
 		const canvasStyleWidth = `${innerWidth}px`;
 		const canvasStyleHeight = `${innerHeight}px`;
 
@@ -124,13 +149,13 @@ export default class Canvas {
 		this.canvasStatic.html.height = canvasHeight;
 		this.canvasStatic.html.style.width = canvasStyleWidth;
 		this.canvasStatic.html.style.height = canvasStyleHeight;
-		this.canvasStatic.context.scale(devicePixelRatio, devicePixelRatio);
+		this.canvasStatic.context.setTransform(dpr, 0, 0, dpr, 0, 0);
 
 		this.canvasInteractive.html.width = canvasWidth;
 		this.canvasInteractive.html.height = canvasHeight;
 		this.canvasInteractive.html.style.width = canvasStyleWidth;
 		this.canvasInteractive.html.style.height = canvasStyleHeight;
-		this.canvasInteractive.context.scale(devicePixelRatio, devicePixelRatio);
+		this.canvasInteractive.context.setTransform(dpr, 0, 0, dpr, 0, 0);
 
 		this.canvasDrawer.drawCanvasStatic();
 		this.canvasDrawer.drawCanvasInteractive();

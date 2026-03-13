@@ -1,6 +1,12 @@
-import { type CanvasInstance, type Shape, type Node, type Coords } from '$lib/types';
+import { type CanvasInstance, type Shape, type Coords, ToolType } from '$lib/types';
+import {
+	CANVAS_BACKGROUND_COLOR,
+	SELECTION_COLOR,
+	SELECTION_HANDLE_RADIUS,
+	SELECTION_HANDLE_STROKE_WIDTH
+} from '$lib/constants';
 import CanvasStore from './CanvasStore';
-import ShapeEntity from './ShapeEntity';
+import ShapeEntity, { type SelectedNode } from './ShapeEntity';
 
 export default class CanvasDrawer {
 	private canvasStatic: CanvasInstance;
@@ -8,7 +14,9 @@ export default class CanvasDrawer {
 	private canvasStore: CanvasStore;
 	private shapeEntity: ShapeEntity;
 
-	private nodeSelected: Node | null = null;
+	private shapeEditing: Shape | null = null;
+	private nodeSelected: SelectedNode | null = null;
+	private hoverNode: SelectedNode | null = null;
 
 	constructor(
 		canvasStatic: CanvasInstance,
@@ -28,7 +36,7 @@ export default class CanvasDrawer {
 
 		this.drawCanvasCallback(this.canvasStatic, () => {
 			// Draw background
-			this.canvasStatic.context.fillStyle = '#f0f0f0';
+			this.canvasStatic.context.fillStyle = CANVAS_BACKGROUND_COLOR;
 			this.canvasStatic.context.fillRect(-10000, -10000, 20000, 20000);
 
 			// Draw shapes
@@ -47,8 +55,33 @@ export default class CanvasDrawer {
 			const currentShape = this.canvasStore.getCurrentShape();
 			if (currentShape) {
 				this.shapeEntity.selectShape(currentShape);
+				if (this.hoverNode) {
+					this.drawHoverHandle(this.hoverNode);
+				}
 			}
 		});
+	}
+
+	updateCursor(event: MouseEvent) {
+		const currentShape = this.canvasStore.getCurrentShape();
+
+		if (!currentShape) {
+			if (this.hoverNode) {
+				this.hoverNode = null;
+				this.canvasInteractive.html.style.cursor = 'default';
+			}
+			return;
+		}
+
+		const { x, y } = this.getMousePosition(event);
+		const node = this.shapeEntity.getNodeSelected(currentShape, x, y);
+		const changed = node?.id !== this.hoverNode?.id;
+
+		if (!changed) return;
+
+		this.hoverNode = node;
+		this.canvasInteractive.html.style.cursor = node ? 'pointer' : 'default';
+		this.drawCanvasInteractive();
 	}
 
 	drawing(event: MouseEvent) {
@@ -74,28 +107,59 @@ export default class CanvasDrawer {
 		const shape = this.shapeEntity.createShape(coordsStart, coordsMouse);
 		if (!shape) return;
 
-		// Add shape to local storage
+		// Add shape to store and persist
 		this.canvasStore.addShape(shape);
 
-		// Clear interactive canvas
-		this.clearCanvas(this.canvasInteractive);
+		// Switch to selection tool and auto-select the new shape
+		this.canvasStore.setCurrentTool(ToolType.SELECTION);
+		this.canvasStore.setCurrentShape(shape);
 
-		this.drawCanvasCallback(this.canvasStatic, () => {
-			// Draw shape to static canvas
-			this.shapeEntity.drawShape(shape);
-		});
+		// Redraw static canvas and show selection handles on interactive canvas
+		this.drawCanvasStatic();
+		this.drawCanvasInteractive();
 	}
 
 	startEditing(event: MouseEvent, shape: Shape) {
 		const { x, y } = this.getMousePosition(event);
 
+		this.shapeEditing = shape;
 		this.nodeSelected = this.shapeEntity.getNodeSelected(shape, x, y);
 	}
 
 	editing(event: MouseEvent) {
+		if (!this.shapeEditing || !this.nodeSelected) return;
+
 		const { x, y } = this.getMousePosition(event);
 
-		const { x: startX, y: startY } = this.canvasStore.getStartPosition();
+		this.shapeEntity.updateShapeFromNode(this.shapeEditing, this.nodeSelected.id, x, y);
+
+		this.drawCanvasStatic();
+		this.drawCanvasInteractive();
+	}
+
+	stopEditing() {
+		if (this.shapeEditing) {
+			this.canvasStore.updateShape(this.shapeEditing);
+		}
+		this.shapeEditing = null;
+		this.nodeSelected = null;
+	}
+
+	cancelEditing() {
+		this.shapeEditing = null;
+		this.nodeSelected = null;
+		this.hoverNode = null;
+	}
+
+	deleteSelectedShape() {
+		const shape = this.canvasStore.getCurrentShape();
+		if (!shape) return;
+		this.canvasStore.removeShape(shape.id);
+		this.canvasStore.setCurrentShape(null);
+		this.hoverNode = null;
+		this.canvasInteractive.html.style.cursor = 'default';
+		this.drawCanvasStatic();
+		this.clearCanvas(this.canvasInteractive);
 	}
 
 	click(event: MouseEvent) {
@@ -140,6 +204,18 @@ export default class CanvasDrawer {
 		const currentY = event.clientY - canvasRect.top - offsetY;
 
 		return { x: currentX, y: currentY };
+	}
+
+	private drawHoverHandle(node: SelectedNode) {
+		const ctx = this.canvasInteractive.context;
+		ctx.beginPath();
+		ctx.arc(node.x, node.y, SELECTION_HANDLE_RADIUS, 0, Math.PI * 2);
+		ctx.fillStyle = SELECTION_COLOR;
+		ctx.fill();
+		ctx.strokeStyle = SELECTION_COLOR;
+		ctx.lineWidth = SELECTION_HANDLE_STROKE_WIDTH;
+		ctx.stroke();
+		ctx.closePath();
 	}
 
 	private drawCanvasCallback(canvas: CanvasInstance, callback: () => void) {
